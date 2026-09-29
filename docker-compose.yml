@@ -2,8 +2,8 @@ version: '3.8'
 
 services:
   postgres:
-    image: postgres:15
-    container_name: postgres_faculdade
+    image: postgis/postgis:15-3.3
+    container_name: postgres_bicoja
     restart: always
     environment:
       POSTGRES_USER: admin
@@ -11,10 +11,15 @@ services:
       POSTGRES_DB: banco_servicos
     ports:
       - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
 
   redis:
     image: redis:alpine
-    container_name: redis_faculdade
+    container_name: redis_bicoja
     restart: always
     ports:
       - "6379:6379"
+
+volumes:
+  postgres_data:

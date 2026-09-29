@@ -1,0 +1,39 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CONTRATANTE
+  PRESTADOR
+  AMBOS
+}
+
+model User {
+  id        String   @id @default(uuid())
+  nome      String
+  email     String   @unique
+  senha     String
+  telefone  String?
+  role      Role     @default(CONTRATANTE)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  servicos  Servico[]
+}
+
+model Servico {
+  id          String   @id @default(uuid())
+  titulo      String
+  descricao   String
+  preco       Float
+  latitude    Float
+  longitude   Float
+  prestadorId String
+  prestador   User     @relation(fields: [prestadorId], references: [id])
+  createdAt   DateTime @default(now())
+}
