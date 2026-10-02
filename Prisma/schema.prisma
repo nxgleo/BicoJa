@@ -1,11 +1,11 @@
 generator client {
-  provider        = "prisma-client-js"
+  provider = "prisma-client-js"
   previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider   = "postgresql"
-  url        = env("DATABASE_URL")
+  provider = "postgresql"
+  url = env("DATABASE_URL")
   extensions = [postgis]
 }
 
@@ -22,38 +22,38 @@ enum StatusProposta {
 }
 
 model User {
-  id            String    @id @default(uuid())
-  nome          String?
-  email         String?   @unique
+  id String @id @default(uuid())
+  nome String?
+  email String? @unique
   emailVerified DateTime?
-  senha         String?   // Para autenticação via email/senha
-  telefone      String?
-  image         String?
-  role          Role      @default(CONTRATANTE)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  senha String?
+  telefone String?
+  image String?
+  role Role @default(CONTRATANTE)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   accounts Account[]
   sessions Session[]
 
-  servicosContratados Servico[]  @relation("ClienteServicos")
-  servicosOferecidos  Servico[]  @relation("PrestadorServicos")
-  propostas           Proposta[] @relation("PrestadorPropostas")
+  servicosContratados Servico[] @relation("ClienteServicos")
+  servicosOferecidos Servico[] @relation("PrestadorServicos")
+  propostas Proposta[] @relation("PrestadorPropostas")
 }
 
 model Account {
-  id                String  @id @default(uuid())
-  userId            String
-  type              String
-  provider          String
+  id String @id @default(uuid())
+  userId String
+  type String
+  provider String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String? @db.Text
-  session_state     String?
+  refresh_token String? @db.Text
+  access_token String? @db.Text
+  expires_at Int?
+  token_type String?
+  scope String?
+  id_token String? @db.Text
+  session_state String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -61,52 +61,52 @@ model Account {
 }
 
 model Session {
-  id           String   @id @default(uuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id String @id @default(uuid())
+  sessionToken String @unique
+  userId String
+  expires DateTime
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model VerificationToken {
   identifier String
-  token      String   @unique
-  expires    DateTime
+  token String @unique
+  expires DateTime
 
   @@unique([identifier, token])
 }
 
 model Servico {
-  id        String   @id @default(uuid())
-  titulo    String
+  id String @id @default(uuid())
+  titulo String
   descricao String
-  preco     Float
+  preco Float
 
-  latitude  Float
+  latitude Float
   longitude Float
   localizacao Unsupported("geometry(Point, 4326)")?
 
   createdAt DateTime @default(now())
 
   clienteId String?
-  cliente   User?   @relation("ClienteServicos", fields: [clienteId], references: [id])
+  cliente User? @relation("ClienteServicos", fields: [clienteId], references: [id])
 
   prestadorId String
-  prestador   User   @relation("PrestadorServicos", fields: [prestadorId], references: [id])
+  prestador User @relation("PrestadorServicos", fields: [prestadorId], references: [id])
 
   propostas Proposta[]
 }
 
 model Proposta {
-  id        String         @id @default(uuid())
-  valor     Float
-  mensagem  String?
-  status    StatusProposta @default(PENDENTE)
-  createdAt DateTime       @default(now())
+  id String @id @default(uuid())
+  valor Float
+  mensagem String?
+  status StatusProposta @default(PENDENTE)
+  createdAt DateTime @default(now())
 
   servicoId String
-  servico   Servico @relation(fields: [servicoId], references: [id], onDelete: Cascade)
+  servico Servico @relation(fields: [servicoId], references: [id], onDelete: Cascade)
 
   prestadorId String
-  prestador   User   @relation("PrestadorPropostas", fields: [prestadorId], references: [id])
+  prestador User @relation("PrestadorPropostas", fields: [prestadorId], references: [id])
 }

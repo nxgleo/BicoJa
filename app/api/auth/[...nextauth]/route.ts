@@ -4,7 +4,6 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
-// ❌ Removido o 'export' daqui
 const authOptions: AuthOptions = {
   adapter: PrismaAdapter(prisma) as any,
   session: { strategy: "jwt" },
@@ -47,5 +46,4 @@ const authOptions: AuthOptions = {
 
 const handler = NextAuth(authOptions);
 
-// APENAS exporte os verbos HTTP esperados pelo Next.js App Router
 export { handler as GET, handler as POST };
