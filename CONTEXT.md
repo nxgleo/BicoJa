@@ -582,7 +582,7 @@ Todas as rotas da API devem retornar JSON no formato padronizado abaixo:
 
 [x] Atualização e remoção de serviço (PUT e DELETE /api/servicos/[id])
 
-[ ] Consulta de geolocalização por proximidade (raio em km usando PostGIS)[cite: 3].
+[x] Consulta de geolocalização por proximidade (raio em km usando PostGIS)[cite: 3].
 
 [ ] Etapa 5: Controle de limites (Rate-limiting) e cache com Redis[cite: 3].
 
