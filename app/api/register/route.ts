@@ -8,14 +8,17 @@ export async function POST(req: Request) {
 
     if (!email || !senha || !nome) {
       return NextResponse.json(
-        { error: "Nome, email e senha são obrigatórios" },
+        { success: false, data: null, error: "Nome, email e senha são obrigatórios" },
         { status: 400 }
       );
     }
 
     const userExists = await prisma.user.findUnique({ where: { email } });
     if (userExists) {
-      return NextResponse.json({ error: "Email já registado" }, { status: 400 });
+      return NextResponse.json(
+        { success: false, data: null, error: "Email já cadastrado" },
+        { status: 400 }
+      );
     }
 
     const senhaHash = await bcrypt.hash(senha, 10);
@@ -30,10 +33,13 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json(
-      { message: "Utilizador criado com sucesso", userId: user.id },
+      { success: true, data: { userId: user.id }, error: null },
       { status: 201 }
     );
   } catch (error) {
-    return NextResponse.json({ error: "Erro ao criar utilizador" }, { status: 500 });
+    return NextResponse.json(
+      { success: false, data: null, error: "Erro interno ao criar utilizador" },
+      { status: 500 }
+    );
   }
 }

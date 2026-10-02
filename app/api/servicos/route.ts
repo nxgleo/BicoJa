@@ -23,7 +23,7 @@ export async function POST(req: Request) {
       !prestadorId
     ) {
       return NextResponse.json(
-        { error: "Todos os campos obrigatórios devem ser enviados." },
+        { success: false, data: null, error: "Todos os campos obrigatórios devem ser enviados." },
         { status: 400 }
       );
     }
@@ -34,7 +34,7 @@ export async function POST(req: Request) {
 
     if (!prestadorExists) {
       return NextResponse.json(
-        { error: "Prestador não encontrado." },
+        { success: false, data: null, error: "Prestador não encontrado." },
         { status: 404 }
       );
     }
@@ -59,11 +59,14 @@ export async function POST(req: Request) {
       },
     });
 
-    return NextResponse.json(novoServico, { status: 201 });
+    return NextResponse.json(
+      { success: true, data: novoServico, error: null },
+      { status: 201 }
+    );
   } catch (error) {
     console.error(error);
     return NextResponse.json(
-      { error: "Erro interno ao cadastrar serviço." },
+      { success: false, data: null, error: "Erro interno ao cadastrar serviço." },
       { status: 500 }
     );
   }
@@ -87,10 +90,13 @@ export async function GET() {
       },
     });
 
-    return NextResponse.json(servicos, { status: 200 });
+    return NextResponse.json(
+      { success: true, data: servicos, error: null },
+      { status: 200 }
+    );
   } catch (error) {
     return NextResponse.json(
-      { error: "Erro interno ao buscar serviços." },
+      { success: false, data: null, error: "Erro interno ao buscar serviços." },
       { status: 500 }
     );
   }
