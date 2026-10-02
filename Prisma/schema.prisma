@@ -88,11 +88,11 @@ model Servico {
 
   createdAt DateTime @default(now())
 
-  clienteId String
-  cliente   User   @relation("ClienteServicos", fields: [clienteId], references: [id])
+  clienteId String?
+  cliente   User?   @relation("ClienteServicos", fields: [clienteId], references: [id])
 
-  prestadorId String?
-  prestador   User?   @relation("PrestadorServicos", fields: [prestadorId], references: [id])
+  prestadorId String
+  prestador   User   @relation("PrestadorServicos", fields: [prestadorId], references: [id])
 
   propostas Proposta[]
 }
