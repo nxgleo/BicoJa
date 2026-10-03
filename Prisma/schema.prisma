@@ -22,23 +22,24 @@ enum StatusProposta {
 }
 
 model User {
-  id String @id @default(uuid())
-  nome String?
-  email String? @unique
+  id            String    @id @default(uuid())
+  nome          String?
+  email         String?   @unique
   emailVerified DateTime?
-  senha String?
-  telefone String?
-  image String?
-  role Role @default(CONTRATANTE)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  senha         String?
+  telefone      String?
+  image         String?
+  role          Role      @default(CONTRATANTE)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   accounts Account[]
   sessions Session[]
 
-  servicosContratados Servico[] @relation("ClienteServicos")
-  servicosOferecidos Servico[] @relation("PrestadorServicos")
-  propostas Proposta[] @relation("PrestadorPropostas")
+  servicosContratados Servico[]          @relation("ClienteServicos")
+  servicosOferecidos  Servico[]          @relation("PrestadorServicos")
+  propostas           Proposta[]         @relation("PrestadorPropostas")
+  pushSubscriptions   PushSubscription[]
 }
 
 model Account {
@@ -109,4 +110,13 @@ model Proposta {
 
   prestadorId String
   prestador User @relation("PrestadorPropostas", fields: [prestadorId], references: [id])
+}
+
+model PushSubscription {
+  id        String   @id @default(uuid())
+  endpoint  String   @unique
+  keys      Json
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
 }

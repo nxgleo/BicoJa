@@ -1,119 +1,17 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { redis } from "@/lib/redis";
+import { checkRateLimit } from "@/lib/rate-limit";
 
-export async function POST(req: Request) {
+export async function GET(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const body = await req.json();
-    const {
-      titulo,
-      descricao,
-      preco,
-      latitude,
-      longitude,
-      prestadorId,
-      clienteId,
-    } = body;
+    const { id } = await params;
 
-    if (
-      !titulo ||
-      !descricao ||
-      preco === undefined ||
-      latitude === undefined ||
-      longitude === undefined ||
-      !prestadorId
-    ) {
-      return NextResponse.json(
-        { success: false, data: null, error: "Todos os campos obrigatórios devem ser enviados." },
-        { status: 400 }
-      );
-    }
-
-    const prestadorExists = await prisma.user.findUnique({
-      where: { id: prestadorId },
-    });
-
-    if (!prestadorExists) {
-      return NextResponse.json(
-        { success: false, data: null, error: "Prestador não encontrado." },
-        { status: 404 }
-      );
-    }
-
-    const novoServico = await prisma.servico.create({
-      data: {
-        titulo,
-        descricao,
-        preco: parseFloat(preco),
-        latitude: parseFloat(latitude),
-        longitude: parseFloat(longitude),
-        prestador: {
-          connect: { id: prestadorId },
-        },
-        ...(clienteId
-          ? {
-              cliente: {
-                connect: { id: clienteId },
-              },
-            }
-          : {}),
-      },
-    });
-
-    return NextResponse.json(
-      { success: true, data: novoServico, error: null },
-      { status: 201 }
-    );
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json(
-      { success: false, data: null, error: "Erro interno ao cadastrar serviço." },
-      { status: 500 }
-    );
-  }
-}
-
-export async function GET(req: Request) {
-  try {
-    const { searchParams } = new URL(req.url);
-    const lat = searchParams.get("lat");
-    const lng = searchParams.get("lng");
-    const raio = searchParams.get("raio");
-
-    if (lat && lng) {
-      const latitude = parseFloat(lat);
-      const longitude = parseFloat(lng);
-      const raioKm = raio ? parseFloat(raio) : 10;
-      const raioMetros = raioKm * 1000;
-
-      const servicosProximos = await prisma.$queryRaw`
-        SELECT 
-          s.id, 
-          s.titulo, 
-          s.descricao, 
-          s.preco, 
-          s.latitude, 
-          s.longitude, 
-          s."createdAt",
-          s."prestadorId",
-          ST_DistanceSphere(
-            ST_MakePoint(s.longitude, s.latitude),
-            ST_MakePoint(${longitude}, ${latitude})
-          ) / 1000 AS distancia_km
-        FROM "Servico" s
-        WHERE ST_DistanceSphere(
-          ST_MakePoint(s.longitude, s.latitude),
-          ST_MakePoint(${longitude}, ${latitude})
-        ) <= ${raioMetros}
-        ORDER BY distancia_km ASC
-      `;
-
-      return NextResponse.json(
-        { success: true, data: servicosProximos, error: null },
-        { status: 200 }
-      );
-    }
-
-    const servicos = await prisma.servico.findMany({
+    const servico = await prisma.servico.findUnique({
+      where: { id },
       include: {
         prestador: {
           select: {
@@ -123,20 +21,117 @@ export async function GET(req: Request) {
             telefone: true,
           },
         },
-      },
-      orderBy: {
-        createdAt: "desc",
+        cliente: {
+          select: {
+            id: true,
+            nome: true,
+            email: true,
+            telefone: true,
+          },
+        },
       },
     });
 
+    if (!servico) {
+      return NextResponse.json(
+        { success: false, data: null, error: "Serviço não encontrado." },
+        { status: 404 }
+      );
+    }
+
     return NextResponse.json(
-      { success: true, data: servicos, error: null },
+      { success: true, data: servico, error: null },
       { status: 200 }
     );
   } catch (error) {
     console.error(error);
     return NextResponse.json(
-      { success: false, data: null, error: "Erro interno ao buscar serviços." },
+      { success: false, data: null, error: "Erro interno ao buscar o serviço." },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PUT(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const body = await req.json();
+    const { titulo, descricao, preco, latitude, longitude } = body;
+
+    const servicoExists = await prisma.servico.findUnique({
+      where: { id },
+    });
+
+    if (!servicoExists) {
+      return NextResponse.json(
+        { success: false, data: null, error: "Serviço não encontrado." },
+        { status: 404 }
+      );
+    }
+
+    const servicoAtualizado = await prisma.servico.update({
+      where: { id },
+      data: {
+        ...(titulo && { titulo }),
+        ...(descricao && { descricao }),
+        ...(preco !== undefined && { preco: parseFloat(preco) }),
+        ...(latitude !== undefined && { latitude: parseFloat(latitude) }),
+        ...(longitude !== undefined && { longitude: parseFloat(longitude) }),
+      },
+    });
+
+    await redis.del("servicos:all");
+    await redis.del(`servico:${id}`);
+
+    return NextResponse.json(
+      { success: true, data: servicoAtualizado, error: null },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json(
+      { success: false, data: null, error: "Erro interno ao atualizar o serviço." },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+
+    const servicoExists = await prisma.servico.findUnique({
+      where: { id },
+    });
+
+    if (!servicoExists) {
+      return NextResponse.json(
+        { success: false, data: null, error: "Serviço não encontrado." },
+        { status: 404 }
+      );
+    }
+
+    await prisma.servico.delete({
+      where: { id },
+    });
+
+    await redis.del("servicos:all");
+    await redis.del(`servico:${id}`);
+
+    return NextResponse.json(
+      { success: true, data: { message: "Serviço removido com sucesso." }, error: null },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json(
+      { success: false, data: null, error: "Erro interno ao remover o serviço." },
       { status: 500 }
     );
   }
