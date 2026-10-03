@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { redis } from "@/lib/redis";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 export async function POST(req: Request) {
   try {
@@ -15,7 +17,22 @@ export async function POST(req: Request) {
       );
     }
 
+    const session = await getServerSession(authOptions);
+    if (!session || !(session.user as any)?.id) {
+      return NextResponse.json(
+        { success: false, data: null, error: "Não autorizado." },
+        { status: 401 }
+      );
+    }
+
     const { valor, mensagem, servicoId, prestadorId } = await req.json();
+
+    if (prestadorId !== (session.user as any).id) {
+      return NextResponse.json(
+        { success: false, data: null, error: "Acesso negado: a proposta deve ser sua." },
+        { status: 403 }
+      );
+    }
 
     if (!valor || !servicoId || !prestadorId) {
       return NextResponse.json(

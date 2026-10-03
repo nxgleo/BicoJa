@@ -28,13 +28,13 @@ O **BicoJá** é um marketplace de serviços locais construído para otimizar a 
 
 ```prisma
 generator client {
-  provider        = "prisma-client-js"
+  provider = "prisma-client-js"
   previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider   = "postgresql"
-  url        = env("DATABASE_URL")
+  provider = "postgresql"
+  url = env("DATABASE_URL")
   extensions = [postgis]
 }
 
@@ -65,25 +65,25 @@ model User {
   accounts Account[]
   sessions Session[]
 
-  servicosContratados Servico[]  @relation("ClienteServicos")
-  servicosOferecidos  Servico[]  @relation("PrestadorServicos")
-  propostas           Proposta[] @relation("PrestadorPropostas")
+  servicosContratados Servico[]          @relation("ClienteServicos")
+  servicosOferecidos  Servico[]          @relation("PrestadorServicos")
+  propostas           Proposta[]         @relation("PrestadorPropostas")
   pushSubscriptions   PushSubscription[]
 }
 
 model Account {
-  id                String  @id @default(uuid())
-  userId            String
-  type              String
-  provider          String
+  id String @id @default(uuid())
+  userId String
+  type String
+  provider String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String? @db.Text
-  session_state     String?
+  refresh_token String? @db.Text
+  access_token String? @db.Text
+  expires_at Int?
+  token_type String?
+  scope String?
+  id_token String? @db.Text
+  session_state String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -91,54 +91,54 @@ model Account {
 }
 
 model Session {
-  id           String   @id @default(uuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id String @id @default(uuid())
+  sessionToken String @unique
+  userId String
+  expires DateTime
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model VerificationToken {
   identifier String
-  token      String   @unique
-  expires    DateTime
+  token String @unique
+  expires DateTime
 
   @@unique([identifier, token])
 }
 
 model Servico {
-  id        String   @id @default(uuid())
-  titulo    String
+  id String @id @default(uuid())
+  titulo String
   descricao String
-  preco     Float
+  preco Float
 
-  latitude  Float
+  latitude Float
   longitude Float
   localizacao Unsupported("geometry(Point, 4326)")?
 
   createdAt DateTime @default(now())
 
   clienteId String?
-  cliente   User?   @relation("ClienteServicos", fields: [clienteId], references: [id])
+  cliente User? @relation("ClienteServicos", fields: [clienteId], references: [id])
 
   prestadorId String
-  prestador   User    @relation("PrestadorServicos", fields: [prestadorId], references: [id])
+  prestador User @relation("PrestadorServicos", fields: [prestadorId], references: [id], onDelete: Cascade)
 
   propostas Proposta[]
 }
 
 model Proposta {
-  id        String         @id @default(uuid())
-  valor     Float
-  mensagem  String?
-  status    StatusProposta @default(PENDENTE)
-  createdAt DateTime       @default(now())
+  id String @id @default(uuid())
+  valor Float
+  mensagem String?
+  status StatusProposta @default(PENDENTE)
+  createdAt DateTime @default(now())
 
   servicoId String
-  servico   Servico @relation(fields: [servicoId], references: [id], onDelete: Cascade)
+  servico Servico @relation(fields: [servicoId], references: [id], onDelete: Cascade)
 
   prestadorId String
-  prestador   User    @relation("PrestadorPropostas", fields: [prestadorId], references: [id])
+  prestador User @relation("PrestadorPropostas", fields: [prestadorId], references: [id], onDelete: Cascade)
 }
 
 model PushSubscription {
@@ -261,7 +261,7 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
-const authOptions: AuthOptions = {
+export const authOptions: AuthOptions = {
   adapter: PrismaAdapter(prisma) as any,
   session: { strategy: "jwt" },
   providers: [
@@ -323,14 +323,6 @@ export async function POST(req: Request) {
       );
     }
 
-    const userExists = await prisma.user.findUnique({ where: { email } });
-    if (userExists) {
-      return NextResponse.json(
-        { success: false, data: null, error: "Email já cadastrado" },
-        { status: 400 }
-      );
-    }
-
     const senhaHash = await bcrypt.hash(senha, 10);
     const user = await prisma.user.create({
       data: {
@@ -346,7 +338,13 @@ export async function POST(req: Request) {
       { success: true, data: { userId: user.id }, error: null },
       { status: 201 }
     );
-  } catch (error) {
+  } catch (error: any) {
+    if (error.code === "P2002") {
+      return NextResponse.json(
+        { success: false, data: null, error: "Email já cadastrado" },
+        { status: 400 }
+      );
+    }
     return NextResponse.json(
       { success: false, data: null, error: "Erro interno ao criar utilizador" },
       { status: 500 }
@@ -362,6 +360,8 @@ import { prisma } from "@/lib/prisma";
 import { redis } from "@/lib/redis";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { geocodeEndereco } from "@/lib/maps";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 export async function POST(req: Request) {
   try {
@@ -372,6 +372,14 @@ export async function POST(req: Request) {
       return NextResponse.json(
         { success: false, data: null, error: "Limite de requisições excedido. Tente novamente mais tarde." },
         { status: 429 }
+      );
+    }
+
+    const session = await getServerSession(authOptions);
+    if (!session || !(session.user as any)?.id) {
+      return NextResponse.json(
+        { success: false, data: null, error: "Não autorizado." },
+        { status: 401 }
       );
     }
 
@@ -414,6 +422,13 @@ export async function POST(req: Request) {
       );
     }
 
+    if (prestadorId !== (session.user as any).id && clienteId !== (session.user as any).id) {
+      return NextResponse.json(
+        { success: false, data: null, error: "Acesso negado." },
+        { status: 403 }
+      );
+    }
+
     const prestadorExists = await prisma.user.findUnique({
       where: { id: prestadorId },
     });
@@ -428,33 +443,41 @@ export async function POST(req: Request) {
     const latFloat = parseFloat(latitude);
     const lngFloat = parseFloat(longitude);
 
-    const novoServico = await prisma.servico.create({
-      data: {
-        titulo,
-        descricao,
-        preco: parseFloat(preco),
-        latitude: latFloat,
-        longitude: lngFloat,
-        prestador: {
-          connect: { id: prestadorId },
+    const novoServico = await prisma.$transaction(async (tx) => {
+      const servico = await tx.servico.create({
+        data: {
+          titulo,
+          descricao,
+          preco: parseFloat(preco),
+          latitude: latFloat,
+          longitude: lngFloat,
+          prestador: {
+            connect: { id: prestadorId },
+          },
+          ...(clienteId
+            ? {
+                cliente: {
+                  connect: { id: clienteId },
+                },
+              }
+            : {}),
         },
-        ...(clienteId
-          ? {
-              cliente: {
-                connect: { id: clienteId },
-              },
-            }
-          : {}),
-      },
+      });
+
+      await tx.$executeRaw`
+        UPDATE "Servico"
+        SET localizacao = ST_SetSRID(ST_MakePoint(${lngFloat}, ${latFloat}), 4326)
+        WHERE id = ${servico.id};
+      `;
+      
+      return servico;
     });
 
-    await prisma.$executeRaw`
-      UPDATE "Servico"
-      SET localizacao = ST_SetSRID(ST_MakePoint(${lngFloat}, ${latFloat}), 4326)
-      WHERE id = ${novoServico.id};
-    `;
-
     await redis.del("servicos:all");
+    const geoKeys = await redis.keys("servicos:geo:*");
+    if (geoKeys.length > 0) {
+      await redis.del(geoKeys);
+    }
 
     return NextResponse.json(
       { success: true, data: novoServico, error: null },
@@ -491,7 +514,9 @@ export async function GET(req: Request) {
       const longitude = parseFloat(lng);
       const raioMetros = parseFloat(raio || "10") * 1000;
 
-      const cacheKey = `servicos:geo:${lat}:${lng}:${raio || 10}`;
+      const latArredondada = latitude.toFixed(3);
+      const lngArredondada = longitude.toFixed(3);
+      const cacheKey = `servicos:geo:${latArredondada}:${lngArredondada}:${raio || 10}`;
       const cachedData = await redis.get(cacheKey);
 
       if (cachedData) {
@@ -502,7 +527,7 @@ export async function GET(req: Request) {
       }
 
       const servicosProximos: any[] = await prisma.$queryRaw`
-        SELECT
+        SELECT 
           s.id, s.titulo, s.descricao, s.preco, s.latitude, s.longitude, s."createdAt",
           ST_Distance(
             s.localizacao::geography,
@@ -565,6 +590,7 @@ export async function GET(req: Request) {
       { status: 200 }
     );
   } catch (error) {
+    console.error(error);
     return NextResponse.json(
       { success: false, data: null, error: "Erro interno ao buscar serviços." },
       { status: 500 }
@@ -616,6 +642,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { redis } from "@/lib/redis";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 export async function GET(
   req: Request,
@@ -671,6 +699,14 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session || !(session.user as any)?.id) {
+      return NextResponse.json(
+        { success: false, data: null, error: "Não autorizado." },
+        { status: 401 }
+      );
+    }
+
     const { id } = await params;
     const body = await req.json();
     const { titulo, descricao, preco, latitude, longitude } = body;
@@ -683,6 +719,13 @@ export async function PUT(
       return NextResponse.json(
         { success: false, data: null, error: "Serviço não encontrado." },
         { status: 404 }
+      );
+    }
+
+    if (servicoExists.prestadorId !== (session.user as any).id && servicoExists.clienteId !== (session.user as any).id) {
+      return NextResponse.json(
+        { success: false, data: null, error: "Acesso negado." },
+        { status: 403 }
       );
     }
 
@@ -699,6 +742,10 @@ export async function PUT(
 
     await redis.del("servicos:all");
     await redis.del(`servico:${id}`);
+    const geoKeys = await redis.keys("servicos:geo:*");
+    if (geoKeys.length > 0) {
+      await redis.del(geoKeys);
+    }
 
     return NextResponse.json(
       { success: true, data: servicoAtualizado, error: null },
@@ -718,6 +765,14 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session || !(session.user as any)?.id) {
+      return NextResponse.json(
+        { success: false, data: null, error: "Não autorizado." },
+        { status: 401 }
+      );
+    }
+
     const { id } = await params;
 
     const servicoExists = await prisma.servico.findUnique({
@@ -731,12 +786,23 @@ export async function DELETE(
       );
     }
 
+    if (servicoExists.prestadorId !== (session.user as any).id && servicoExists.clienteId !== (session.user as any).id) {
+      return NextResponse.json(
+        { success: false, data: null, error: "Acesso negado." },
+        { status: 403 }
+      );
+    }
+
     await prisma.servico.delete({
       where: { id },
     });
 
     await redis.del("servicos:all");
     await redis.del(`servico:${id}`);
+    const geoKeys = await redis.keys("servicos:geo:*");
+    if (geoKeys.length > 0) {
+      await redis.del(geoKeys);
+    }
 
     return NextResponse.json(
       { success: true, data: { message: "Serviço removido com sucesso." }, error: null },
@@ -758,6 +824,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { redis } from "@/lib/redis";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 export async function POST(req: Request) {
   try {
@@ -771,7 +839,22 @@ export async function POST(req: Request) {
       );
     }
 
+    const session = await getServerSession(authOptions);
+    if (!session || !(session.user as any)?.id) {
+      return NextResponse.json(
+        { success: false, data: null, error: "Não autorizado." },
+        { status: 401 }
+      );
+    }
+
     const { valor, mensagem, servicoId, prestadorId } = await req.json();
+
+    if (prestadorId !== (session.user as any).id) {
+      return NextResponse.json(
+        { success: false, data: null, error: "Acesso negado: a proposta deve ser sua." },
+        { status: 403 }
+      );
+    }
 
     if (!valor || !servicoId || !prestadorId) {
       return NextResponse.json(
@@ -1546,3 +1629,26 @@ Todas as rotas da API devem retornar JSON no formato padronizado abaixo:
 [x] `public/sw.js`, registro da assinatura no cliente, endpoint `POST /api/notificacoes/inscrever` e persistência no model `PushSubscription`.
 
 [x] O PATCH de `app/api/propostas/[id]/route.ts` emite `status-proposta` na sala do prestador e envia Web Push para a assinatura salva.
+
+---
+
+## 9 Revisão de Segurança e Performance (Atualizações Recentes)
+
+Foi realizada uma revisão da base de código que identificou e corrigiu problemas críticos na API:
+
+1. **Segurança e Autorização (Crítico):**
+   - Adicionada a validação da sessão (usando `getServerSession(authOptions)`) em `/api/servicos` (POST), `/api/servicos/[id]` (PUT e DELETE) e `/api/propostas` (POST).
+   - Implementadas checagens de autorização para garantir que apenas o criador de um serviço (`prestadorId` ou `clienteId`) ou proposta (`prestadorId`) possa realizar alterações ou deleções.
+
+2. **Invalidação de Cache Geoespacial (Redis):**
+   - As rotas de criação, atualização e exclusão de serviços agora invalidam corretamente o cache de busca por geolocalização (`servicos:geo:*`), evitando a exibição de dados desatualizados (stale data).
+   - Arredondamento implementado nas coordenadas de busca (3 casas decimais) na rota `GET /api/servicos`, reduzindo a fragmentação e otimizando a taxa de acertos (cache hits).
+
+3. **Consistência de Transações (Prisma + PostGIS):**
+   - A criação de serviços e a injeção do ponto geométrico (`ST_SetSRID`) na rota `/api/servicos` (POST) agora estão envolvidos por um `$transaction`, assegurando que o serviço nunca seja criado sem as suas devidas coordenadas.
+
+4. **Tratamento de Registro de Usuários:**
+   - A condição de corrida na criação de usuários (`/api/register`) foi resolvida com a remoção da query `findUnique` redundante, substituindo-a pelo tratamento do erro `P2002` de violação de chave única nativo do Prisma.
+
+5. **Exclusões em Cascata:**
+   - Modificado o arquivo `schema.prisma` para aplicar a ação de exclusão em cascata (`onDelete: Cascade`) nas relações `PrestadorServicos` (da model `Servico`) e `PrestadorPropostas` (da model `Proposta`). Agora os prestadores podem deletar suas contas com segurança, apagando seus dados atrelados.

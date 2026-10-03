@@ -93,7 +93,7 @@ model Servico {
   cliente User? @relation("ClienteServicos", fields: [clienteId], references: [id])
 
   prestadorId String
-  prestador User @relation("PrestadorServicos", fields: [prestadorId], references: [id])
+  prestador User @relation("PrestadorServicos", fields: [prestadorId], references: [id], onDelete: Cascade)
 
   propostas Proposta[]
 }
@@ -109,7 +109,7 @@ model Proposta {
   servico Servico @relation(fields: [servicoId], references: [id], onDelete: Cascade)
 
   prestadorId String
-  prestador User @relation("PrestadorPropostas", fields: [prestadorId], references: [id])
+  prestador User @relation("PrestadorPropostas", fields: [prestadorId], references: [id], onDelete: Cascade)
 }
 
 model PushSubscription {

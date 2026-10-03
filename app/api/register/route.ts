@@ -13,14 +13,6 @@ export async function POST(req: Request) {
       );
     }
 
-    const userExists = await prisma.user.findUnique({ where: { email } });
-    if (userExists) {
-      return NextResponse.json(
-        { success: false, data: null, error: "Email já cadastrado" },
-        { status: 400 }
-      );
-    }
-
     const senhaHash = await bcrypt.hash(senha, 10);
     const user = await prisma.user.create({
       data: {
@@ -36,7 +28,13 @@ export async function POST(req: Request) {
       { success: true, data: { userId: user.id }, error: null },
       { status: 201 }
     );
-  } catch (error) {
+  } catch (error: any) {
+    if (error.code === "P2002") {
+      return NextResponse.json(
+        { success: false, data: null, error: "Email já cadastrado" },
+        { status: 400 }
+      );
+    }
     return NextResponse.json(
       { success: false, data: null, error: "Erro interno ao criar utilizador" },
       { status: 500 }
