@@ -17,10 +17,21 @@ export interface PushNotificationPayload {
   url?: string;
 }
 
+export type PushNotificationResult =
+  | { success: true }
+  | { success: false; error: string; statusCode?: number };
+
 export async function sendPushNotification(
   subscription: webpush.PushSubscription,
   payload: PushNotificationPayload
-) {
+): Promise<PushNotificationResult> {
+  if (!publicVapidKey || !privateVapidKey) {
+    return {
+      success: false,
+      error: "As chaves VAPID não estão configuradas.",
+    };
+  }
+
   try {
     await webpush.sendNotification(
       subscription,
@@ -28,6 +39,15 @@ export async function sendPushNotification(
     );
     return { success: true };
   } catch (error) {
-    return { success: false, error };
+    const statusCode =
+      typeof error === "object" && error !== null && "statusCode" in error
+        ? Number(error.statusCode)
+        : undefined;
+
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Falha ao enviar notificação Push.",
+      ...(statusCode ? { statusCode } : {}),
+    };
   }
 }

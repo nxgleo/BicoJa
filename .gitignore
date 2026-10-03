@@ -13,3 +13,4 @@ yarn-error.log*
 .cursor/
 .devin/
 .next/
+tsconfig.tsbuildinfo

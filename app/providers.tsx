@@ -17,20 +17,7 @@ const SocketContext = createContext<SocketContextType>({
 
 export const useSocket = () => useContext(SocketContext);
 
-// Helper para converter VAPID key
-function urlBase64ToUint8Array(base64String: string) {
-  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
-  const rawData = window.atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
-  for (let i = 0; i < rawData.length; ++i) {
-    outputArray[i] = rawData.charCodeAt(i);
-  }
-  return outputArray;
-}
-
-// Componente interno que gerencia o Socket e o Web Push
-function SocketAndPushProvider({ children }: { children: React.ReactNode }) {
+function SocketProvider({ children }: { children: React.ReactNode }) {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const { data: session } = useSession();
@@ -61,40 +48,6 @@ function SocketAndPushProvider({ children }: { children: React.ReactNode }) {
     };
   }, [userId]);
 
-  // Registro do Service Worker & Web Push
-  useEffect(() => {
-    if (!userId || !("serviceWorker" in navigator) || !("PushManager" in window)) {
-      return;
-    }
-
-    async function registerPush() {
-      try {
-        const registration = await navigator.serviceWorker.register("/sw.js");
-        let subscription = await registration.pushManager.getSubscription();
-
-        if (!subscription) {
-          const publicVapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-          if (!publicVapidKey) return;
-
-          subscription = await registration.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: urlBase64ToUint8Array(publicVapidKey),
-          });
-        }
-
-        await fetch("/api/notificacoes/inscrever", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId, subscription }),
-        });
-      } catch (error) {
-        console.error("Erro ao registrar Push Notification:", error);
-      }
-    }
-
-    registerPush();
-  }, [userId]);
-
   return (
     <SocketContext.Provider value={{ socket, isConnected }}>
       {children}
@@ -106,7 +59,7 @@ function SocketAndPushProvider({ children }: { children: React.ReactNode }) {
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <SessionProvider>
-      <SocketAndPushProvider>{children}</SocketAndPushProvider>
+      <SocketProvider>{children}</SocketProvider>
     </SessionProvider>
   );
 }

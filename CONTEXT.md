@@ -20,7 +20,7 @@ O **BicoJá** é um marketplace de serviços locais construído para otimizar a 
 | **Banco de Dados** | PostgreSQL + PostGIS | Persistência relacional e suporte a consultas espaciais/geográficas. |
 | **Cache & Filas** | Redis (`ioredis`) | Cache da listagem de serviços e rate limiting por IP em rotas selecionadas. |
 | **Autenticação** | NextAuth.js (com Credentials + JWT) | Gestão de acesso, contas e sessões de usuários. |
-| **APIs Externas** | Google Maps Platform, Mercado Pago e Web Push API | Web Push com helper e rota de envio; Mercado Pago ainda simulado localmente. |
+| **APIs Externas** | OpenStreetMap Nominatim, Mercado Pago e Web Push API | Geocodificação de endereços via Nominatim; Mercado Pago ainda simulado localmente. |
 
 ---
 
@@ -213,6 +213,7 @@ bicoja-projeto/
 │   ├── page.tsx
 │   └── providers.tsx
 ├── lib/
+│   ├── maps.ts
 │   ├── payments.ts
 │   ├── prisma.ts
 │   ├── rate-limit.ts
@@ -360,6 +361,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { redis } from "@/lib/redis";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { geocodeEndereco } from "@/lib/maps";
 
 export async function POST(req: Request) {
   try {
@@ -374,15 +376,29 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const {
+    let {
       titulo,
       descricao,
       preco,
       latitude,
       longitude,
+      endereco,
       prestadorId,
       clienteId,
     } = body;
+
+    if ((latitude === undefined || longitude === undefined) && endereco) {
+      const coords = await geocodeEndereco(endereco);
+      if (coords) {
+        latitude = coords.latitude;
+        longitude = coords.longitude;
+      } else {
+        return NextResponse.json(
+          { success: false, data: null, error: "Não foi possível obter coordenadas para este endereço." },
+          { status: 400 }
+        );
+      }
+    }
 
     if (
       !titulo ||
@@ -393,7 +409,7 @@ export async function POST(req: Request) {
       !prestadorId
     ) {
       return NextResponse.json(
-        { success: false, data: null, error: "Todos os campos obrigatórios devem ser enviados." },
+        { success: false, data: null, error: "Todos os campos obrigatórios (ou endereço válido) devem ser enviados." },
         { status: 400 }
       );
     }
@@ -409,13 +425,16 @@ export async function POST(req: Request) {
       );
     }
 
+    const latFloat = parseFloat(latitude);
+    const lngFloat = parseFloat(longitude);
+
     const novoServico = await prisma.servico.create({
       data: {
         titulo,
         descricao,
         preco: parseFloat(preco),
-        latitude: parseFloat(latitude),
-        longitude: parseFloat(longitude),
+        latitude: latFloat,
+        longitude: lngFloat,
         prestador: {
           connect: { id: prestadorId },
         },
@@ -428,6 +447,12 @@ export async function POST(req: Request) {
           : {}),
       },
     });
+
+    await prisma.$executeRaw`
+      UPDATE "Servico"
+      SET localizacao = ST_SetSRID(ST_MakePoint(${lngFloat}, ${latFloat}), 4326)
+      WHERE id = ${novoServico.id};
+    `;
 
     await redis.del("servicos:all");
 
@@ -453,6 +478,57 @@ export async function GET(req: Request) {
       return NextResponse.json(
         { success: false, data: null, error: "Limite de requisições excedido. Tente novamente mais tarde." },
         { status: 429 }
+      );
+    }
+
+    const { searchParams } = new URL(req.url);
+    const lat = searchParams.get("lat");
+    const lng = searchParams.get("lng");
+    const raio = searchParams.get("raio");
+
+    if (lat && lng) {
+      const latitude = parseFloat(lat);
+      const longitude = parseFloat(lng);
+      const raioMetros = parseFloat(raio || "10") * 1000;
+
+      const cacheKey = `servicos:geo:${lat}:${lng}:${raio || 10}`;
+      const cachedData = await redis.get(cacheKey);
+
+      if (cachedData) {
+        return NextResponse.json(
+          { success: true, data: JSON.parse(cachedData), error: null },
+          { status: 200 }
+        );
+      }
+
+      const servicosProximos: any[] = await prisma.$queryRaw`
+        SELECT
+          s.id, s.titulo, s.descricao, s.preco, s.latitude, s.longitude, s."createdAt",
+          ST_Distance(
+            s.localizacao::geography,
+            ST_SetSRID(ST_MakePoint(${longitude}, ${latitude}), 4326)::geography
+          ) / 1000 AS "distanciaKm",
+          json_build_object(
+            'id', u.id,
+            'nome', u.nome,
+            'email', u.email,
+            'telefone', u.telefone
+          ) AS prestador
+        FROM "Servico" s
+        JOIN "User" u ON s."prestadorId" = u.id
+        WHERE ST_DWithin(
+          s.localizacao::geography,
+          ST_SetSRID(ST_MakePoint(${longitude}, ${latitude}), 4326)::geography,
+          ${raioMetros}
+        )
+        ORDER BY "distanciaKm" ASC;
+      `;
+
+      await redis.set(cacheKey, JSON.stringify(servicosProximos), "EX", 60);
+
+      return NextResponse.json(
+        { success: true, data: servicosProximos, error: null },
+        { status: 200 }
       );
     }
 
@@ -493,6 +569,43 @@ export async function GET(req: Request) {
       { success: false, data: null, error: "Erro interno ao buscar serviços." },
       { status: 500 }
     );
+  }
+}
+```
+
+### lib/maps.ts
+```typescript
+export interface Coordenadas {
+  latitude: number;
+  longitude: number;
+  formattedAddress?: string;
+}
+
+export async function geocodeEndereco(endereco: string): Promise<Coordenadas | null> {
+  try {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(endereco)}&countrycodes=br&limit=1`,
+      {
+        headers: {
+          "User-Agent": "BicoJaApp/1.0 (contato@bicoja.com.br)",
+        },
+      }
+    );
+
+    const data = await response.json();
+
+    if (data && data.length > 0) {
+      return {
+        latitude: parseFloat(data[0].lat),
+        longitude: parseFloat(data[0].lon),
+        formattedAddress: data[0].display_name,
+      };
+    }
+
+    return null;
+  } catch (error) {
+    console.error("Erro na geocodificação via Nominatim:", error);
+    return null;
   }
 }
 ```
@@ -1410,7 +1523,9 @@ Todas as rotas da API devem retornar JSON no formato padronizado abaixo:
 
 [x] Atualização e remoção de serviço (PUT e DELETE /api/servicos/[id])
 
-[ ] Consulta de geolocalização por proximidade (raio em km usando PostGIS); ainda não consta nas rotas atuais.
+[x] Geocodificação de endereço via Nominatim em `POST /api/servicos` quando coordenadas não forem enviadas.
+
+[x] Consulta de serviços por proximidade em `GET /api/servicos?lat=...&lng=...&raio=...`, usando PostGIS e distância em quilômetros.
 
 [/] Etapa 5: Rate limiting e cache com Redis — implementados parcialmente.
 

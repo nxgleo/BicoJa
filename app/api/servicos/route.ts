@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { redis } from "@/lib/redis";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { geocodeEndereco } from "@/lib/maps";
 
 export async function POST(req: Request) {
   try {
@@ -16,15 +17,29 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const {
+    let {
       titulo,
       descricao,
       preco,
       latitude,
       longitude,
+      endereco,
       prestadorId,
       clienteId,
     } = body;
+
+    if ((latitude === undefined || longitude === undefined) && endereco) {
+      const coords = await geocodeEndereco(endereco);
+      if (coords) {
+        latitude = coords.latitude;
+        longitude = coords.longitude;
+      } else {
+        return NextResponse.json(
+          { success: false, data: null, error: "Não foi possível obter coordenadas para este endereço." },
+          { status: 400 }
+        );
+      }
+    }
 
     if (
       !titulo ||
@@ -35,7 +50,7 @@ export async function POST(req: Request) {
       !prestadorId
     ) {
       return NextResponse.json(
-        { success: false, data: null, error: "Todos os campos obrigatórios devem ser enviados." },
+        { success: false, data: null, error: "Todos os campos obrigatórios (ou endereço válido) devem ser enviados." },
         { status: 400 }
       );
     }
@@ -51,16 +66,16 @@ export async function POST(req: Request) {
       );
     }
 
-    const parsedLat = parseFloat(latitude);
-    const parsedLng = parseFloat(longitude);
+    const latFloat = parseFloat(latitude);
+    const lngFloat = parseFloat(longitude);
 
     const novoServico = await prisma.servico.create({
       data: {
         titulo,
         descricao,
         preco: parseFloat(preco),
-        latitude: parsedLat,
-        longitude: parsedLng,
+        latitude: latFloat,
+        longitude: lngFloat,
         prestador: {
           connect: { id: prestadorId },
         },
@@ -74,11 +89,10 @@ export async function POST(req: Request) {
       },
     });
 
-    // Popula a coluna de geometria Point do PostGIS (SRID 4326: lon, lat)
     await prisma.$executeRaw`
       UPDATE "Servico"
-      SET localizacao = ST_SetSRID(ST_MakePoint(${parsedLng}, ${parsedLat}), 4326)
-      WHERE id = ${novoServico.id}
+      SET localizacao = ST_SetSRID(ST_MakePoint(${lngFloat}, ${latFloat}), 4326)
+      WHERE id = ${novoServico.id};
     `;
 
     await redis.del("servicos:all");
@@ -111,15 +125,14 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const lat = searchParams.get("lat");
     const lng = searchParams.get("lng");
-    const raioKm = searchParams.get("raio");
+    const raio = searchParams.get("raio");
 
-    // Se os parâmetros de geolocalização foram fornecidos
-    if (lat && lng && raioKm) {
-      const parsedLat = parseFloat(lat);
-      const parsedLng = parseFloat(lng);
-      const raioMetros = parseFloat(raioKm) * 1000;
+    if (lat && lng) {
+      const latitude = parseFloat(lat);
+      const longitude = parseFloat(lng);
+      const raioMetros = parseFloat(raio || "10") * 1000;
 
-      const cacheKey = `servicos:geo:${parsedLat}:${parsedLng}:${raioKm}`;
+      const cacheKey = `servicos:geo:${lat}:${lng}:${raio || 10}`;
       const cachedData = await redis.get(cacheKey);
 
       if (cachedData) {
@@ -129,20 +142,13 @@ export async function GET(req: Request) {
         );
       }
 
-      // Consulta espacial via PostGIS
-      const servicosProximos = await prisma.$queryRaw`
+      const servicosProximos: any[] = await prisma.$queryRaw`
         SELECT 
-          s.id, 
-          s.titulo, 
-          s.descricao, 
-          s.preco, 
-          s.latitude, 
-          s.longitude, 
-          s."createdAt",
+          s.id, s.titulo, s.descricao, s.preco, s.latitude, s.longitude, s."createdAt",
           ST_Distance(
-            s.localizacao::geography, 
-            ST_SetSRID(ST_MakePoint(${parsedLng}, ${parsedLat}), 4326)::geography
-          ) / 1000 AS distancia_km,
+            s.localizacao::geography,
+            ST_SetSRID(ST_MakePoint(${longitude}, ${latitude}), 4326)::geography
+          ) / 1000 AS "distanciaKm",
           json_build_object(
             'id', u.id,
             'nome', u.nome,
@@ -153,10 +159,10 @@ export async function GET(req: Request) {
         JOIN "User" u ON s."prestadorId" = u.id
         WHERE ST_DWithin(
           s.localizacao::geography,
-          ST_SetSRID(ST_MakePoint(${parsedLng}, ${parsedLat}), 4326)::geography,
+          ST_SetSRID(ST_MakePoint(${longitude}, ${latitude}), 4326)::geography,
           ${raioMetros}
         )
-        ORDER BY distancia_km ASC;
+        ORDER BY "distanciaKm" ASC;
       `;
 
       await redis.set(cacheKey, JSON.stringify(servicosProximos), "EX", 60);
@@ -167,7 +173,6 @@ export async function GET(req: Request) {
       );
     }
 
-    // Caso não forneça lat/lng/raio, retorna a listagem padrão
     const cacheKey = "servicos:all";
     const cachedData = await redis.get(cacheKey);
 

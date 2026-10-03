@@ -60,22 +60,37 @@ export async function PATCH(
       });
     }
 
-    const pushSub = await prisma.pushSubscription.findFirst({
+    const pushSubscriptions = await prisma.pushSubscription.findMany({
       where: { userId: propostaExistente.prestadorId },
     });
 
-    if (pushSub) {
-      await sendPushNotification(
-        {
-          endpoint: pushSub.endpoint,
-          keys: pushSub.keys as any,
-        },
-        {
-          title: `Sua proposta foi ${status.toLowerCase()}!`,
-          body: `Sua proposta para o serviço "${propostaExistente.servico.titulo}" foi ${status.toLowerCase()}.`,
-          url: `/servicos/${propostaExistente.servicoId}`,
+    const pushResults = await Promise.all(
+      pushSubscriptions.map(async (subscription) => {
+        const result = await sendPushNotification(
+          {
+            endpoint: subscription.endpoint,
+            keys: subscription.keys as any,
+          },
+          {
+            title: `Sua proposta foi ${status.toLowerCase()}!`,
+            body: `Sua proposta para o serviço "${propostaExistente.servico.titulo}" foi ${status.toLowerCase()}.`,
+            url: `/servicos/${propostaExistente.servicoId}`,
+          }
+        );
+
+        if (!result.success) {
+          console.error("Falha ao enviar Web Push:", result.error);
+          if (result.statusCode === 404 || result.statusCode === 410) {
+            await prisma.pushSubscription.delete({ where: { id: subscription.id } });
+          }
         }
-      );
+
+        return result;
+      })
+    );
+
+    if (pushSubscriptions.length > 0 && !pushResults.some((result) => result.success)) {
+      console.error("Nenhuma assinatura Push recebeu a atualização da proposta.");
     }
 
     return NextResponse.json(
