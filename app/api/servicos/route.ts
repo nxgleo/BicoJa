@@ -65,9 +65,16 @@ export async function POST(req: Request) {
       );
     }
 
-    if (prestadorId !== (session.user as any).id && clienteId !== (session.user as any).id) {
+    if (prestadorId !== (session.user as any).id) {
       return NextResponse.json(
-        { success: false, data: null, error: "Acesso negado." },
+        { success: false, data: null, error: "Acesso negado. Você só pode criar serviços em seu próprio nome (prestadorId)." },
+        { status: 403 }
+      );
+    }
+
+    if (clienteId && clienteId !== (session.user as any).id) {
+      return NextResponse.json(
+        { success: false, data: null, error: "Acesso negado. Você não pode atribuir outro usuário como cliente." },
         { status: 403 }
       );
     }

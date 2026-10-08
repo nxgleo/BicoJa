@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { redis } from "@/lib/redis";
 import { sendPushNotification } from "@/lib/web-push";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 export async function PATCH(
   req: Request,
@@ -18,6 +20,14 @@ export async function PATCH(
       );
     }
 
+    const session = await getServerSession(authOptions);
+    if (!session || !(session.user as any)?.id) {
+      return NextResponse.json(
+        { success: false, data: null, error: "Não autorizado." },
+        { status: 401 }
+      );
+    }
+
     const propostaExistente = await prisma.proposta.findUnique({
       where: { id },
       include: { servico: true },
@@ -27,6 +37,13 @@ export async function PATCH(
       return NextResponse.json(
         { success: false, data: null, error: "Proposta não encontrada." },
         { status: 404 }
+      );
+    }
+
+    if (propostaExistente.servico.prestadorId !== (session.user as any).id) {
+      return NextResponse.json(
+        { success: false, data: null, error: "Acesso negado. Apenas o criador do serviço pode alterar o status da proposta." },
+        { status: 403 }
       );
     }
 
