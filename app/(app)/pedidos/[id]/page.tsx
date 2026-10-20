@@ -87,7 +87,7 @@ export default async function DetalhePedido({ params, searchParams }: Props) {
             <Avatar nome={r.pedido.cliente.nome} fotoUrl={r.pedido.cliente.foto} />
             <p><b>{r.pedido.cliente.nome}</b><span className="block text-sm text-texto-suave">quem pediu</span></p>
           </div>
-          <BotaoConversar texto="Quero atender" />
+          <BotaoConversar origem={{ pedidoId: p.id }} texto="Quero atender" />
         </>
       )}
     </div>

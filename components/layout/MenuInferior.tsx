@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useChat } from "@/components/chat/ProvedorChat";
 import { ClipboardList, Home, MessageCircle, User, Wallet, Wrench, type LucideIcon } from "lucide-react";
 
 export type Modo = "cliente" | "prestador";
@@ -34,6 +35,7 @@ function estaAtivo(href: string, caminho: string, ehInicio: boolean): boolean {
 export function MenuInferior({ modo }: { modo: Modo }) {
   const caminho = usePathname() ?? "/";
   const itens = ITENS[modo];
+  const { naoLidas } = useChat();
 
   return (
     <nav
@@ -53,7 +55,15 @@ export function MenuInferior({ modo }: { modo: Modo }) {
                 }`}
               >
                 <Icone aria-hidden className={`size-6 transition-transform duration-200 ${ativo ? "scale-110" : ""}`} strokeWidth={ativo ? 2.5 : 2} />
-                {rotulo}
+                <span className="relative">
+                  {rotulo}
+                  {href === "/conversas" && naoLidas > 0 && (
+                    <span className="absolute -top-7 left-[calc(50%+0.4rem)] min-w-5 rounded-full bg-urgencia px-1.5 text-center text-xs leading-5 text-white md:static md:ml-1.5 md:inline-block">
+                      {naoLidas > 99 ? "99+" : naoLidas}
+                      <span className="sr-only"> {naoLidas === 1 ? "mensagem nova" : "mensagens novas"}</span>
+                    </span>
+                  )}
+                </span>
               </Link>
             </li>
           );

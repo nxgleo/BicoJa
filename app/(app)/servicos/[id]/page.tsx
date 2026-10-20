@@ -8,6 +8,7 @@ import { formatarPreco } from "@/lib/formatar";
 import { Avatar } from "@/components/ui";
 import { GaleriaFotos } from "@/components/publico/GaleriaFotos";
 import { BotaoConversar } from "@/components/publico/BotaoConversar";
+import { idDaSessao } from "@/lib/contas/sessao";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,7 @@ export default async function PaginaDoAnuncio({ params }: { params: Promise<{ id
   const { id } = await params;
   const a = await anuncioPublico(prisma, id);
   if (!a) notFound();
+  const souEu = (await idDaSessao()) === a.prestador.id;
 
   return (
     <div className="flex flex-col gap-6">
@@ -43,7 +45,7 @@ export default async function PaginaDoAnuncio({ params }: { params: Promise<{ id
         <ChevronRight aria-hidden className="size-6 text-texto-suave" />
       </Link>
 
-      <BotaoConversar texto={`Conversar com ${a.prestador.nome.split(" ")[0]}`} />
+      {souEu ? null : <BotaoConversar origem={{ servicoId: a.id }} texto={`Conversar com ${a.prestador.nome.split(" ")[0]}`} />}
     </div>
   );
 }

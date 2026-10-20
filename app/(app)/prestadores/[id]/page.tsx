@@ -8,6 +8,7 @@ import { formatarPreco } from "@/lib/formatar";
 import { Avatar } from "@/components/ui";
 import { GaleriaFotos } from "@/components/publico/GaleriaFotos";
 import { BotaoConversar } from "@/components/publico/BotaoConversar";
+import { idDaSessao } from "@/lib/contas/sessao";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +18,7 @@ export default async function PerfilDoPrestador({ params }: { params: Promise<{ 
   const { id } = await params;
   const p = await perfilPublico(prisma, id);
   if (!p) notFound();
+  const souEu = (await idDaSessao()) === p.id;
   const primeiroNome = p.nome.split(" ")[0];
 
   return (
@@ -62,7 +64,7 @@ export default async function PerfilDoPrestador({ params }: { params: Promise<{ 
         )}
       </section>
 
-      <BotaoConversar texto={`Conversar com ${primeiroNome}`} />
+      {souEu ? null : <BotaoConversar origem={{ prestadorId: p.id }} texto={`Conversar com ${primeiroNome}`} />}
     </div>
   );
 }
