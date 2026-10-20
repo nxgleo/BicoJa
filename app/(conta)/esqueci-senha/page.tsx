@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { Botao, Campo } from "@/components/ui";
@@ -18,6 +18,27 @@ export default function EsqueciSenha() {
   const [novaSenha, setNovaSenha] = useState("");
   const [erros, setErros] = useState<Erros>({});
   const [carregando, setCarregando] = useState(false);
+  const [espera, setEspera] = useState(0);
+  const [aviso, setAviso] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (espera <= 0) return;
+    const t = setTimeout(() => setEspera((s) => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [espera]);
+
+  async function mandarNovoCodigo() {
+    setErros({});
+    setAviso(null);
+    const r = await enviarJson("/api/contas/senha/recuperar", "POST", { email });
+    if (!r.ok) {
+      setErros({ codigo: r.erro });
+      return;
+    }
+    setEspera(60);
+    setCodigo("");
+    setAviso("Se a conta existir, mandamos um código novo.");
+  }
 
   async function pedirCodigo(e: FormEvent) {
     e.preventDefault();
@@ -30,6 +51,7 @@ export default function EsqueciSenha() {
       focarCampo("email");
       return;
     }
+    setEspera(60);
     setPasso(2);
   }
 
@@ -81,6 +103,12 @@ export default function EsqueciSenha() {
         onChange={(e) => setCodigo(e.target.value.replace(/\D/g, ""))}
         erro={erros.codigo}
       />
+      <div className="flex flex-col items-center gap-1">
+        {aviso && <p role="status" className="font-bold text-sucesso">{aviso}</p>}
+        <Botao variante="fantasma" onClick={mandarNovoCodigo} disabled={espera > 0}>
+          {espera > 0 ? `Mandar novo código em ${espera}s` : "Mandar novo código"}
+        </Botao>
+      </div>
       <CampoSenha id="novaSenha" rotulo="Senha nova" autoComplete="new-password" value={novaSenha} onChange={(e) => setNovaSenha(e.target.value)} erro={erros.novaSenha} mostrarRegra />
       <Botao type="submit" larguraTotal tamanho="grande" carregando={carregando} className="mt-auto">
         Salvar senha nova e entrar

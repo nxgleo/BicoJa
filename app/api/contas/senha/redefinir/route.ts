@@ -15,6 +15,8 @@ export async function POST(req: Request) {
   }
 
   const { email, codigo, novaSenha } = validado.data;
+  // Também por email: trocar de IP não dá mais chances de adivinhar o código
+  if (!(await limitar(`senha-redefinir-email:${email}`, 10, 600))) return responderErro(429, ERRO_LIMITE);
   const r = await redefinirSenha(prisma, email, codigo, novaSenha);
   if (!r.ok) return responderErro(400, r.erro, "codigo");
   return NextResponse.json({ ok: true });

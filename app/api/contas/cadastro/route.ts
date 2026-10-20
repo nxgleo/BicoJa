@@ -7,13 +7,15 @@ import { ERRO_LIMITE, ipDaRequisicao, lerJson, limitar, responderErro } from "@/
 
 // POST /api/contas/cadastro — passo "Seus dados". Depois do 201 a tela faz o login automático.
 export async function POST(req: Request) {
-  if (!(await limitar(`cadastro:${ipDaRequisicao(req)}`, 5, 600))) return responderErro(429, ERRO_LIMITE);
-
   const validado = esquemaCadastro.safeParse(await lerJson(req));
   if (!validado.success) {
     const { campo, erro } = primeiroErro(validado.error);
     return responderErro(400, erro, campo);
   }
+
+  // Só conta no limite depois de passar na validação: errar a digitação não bloqueia ninguém.
+  // 20 por IP em 10 minutos (várias pessoas podem dividir o mesmo IP da operadora).
+  if (!(await limitar(`cadastro:${ipDaRequisicao(req)}`, 20, 600))) return responderErro(429, ERRO_LIMITE);
 
   try {
     const resultado = await criarConta(prisma, validado.data);

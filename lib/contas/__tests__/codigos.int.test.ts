@@ -82,6 +82,16 @@ describe("enviarCodigo e conferirCodigo", () => {
     expect((await conferirCodigo(prisma, userId, "EMAIL_CADASTRO", certo)).ok).toBe(false);
   });
 
+  test("10 tentativas erradas ao mesmo tempo não passam do limite de 5", async () => {
+    await enviarCodigo(prisma, userId, "EMAIL_CADASTRO");
+    const certo = ultimoCodigo();
+    const errado = certo === "000000" ? "111111" : "000000";
+    await Promise.all(Array.from({ length: 10 }, () => conferirCodigo(prisma, userId, "EMAIL_CADASTRO", errado)));
+    const salvo = await prisma.codigoVerificacao.findFirstOrThrow({ where: { userId } });
+    expect(salvo.tentativas).toBeLessThanOrEqual(5);
+    expect((await conferirCodigo(prisma, userId, "EMAIL_CADASTRO", certo)).ok).toBe(false);
+  });
+
   test("pedir um código novo cancela o anterior", async () => {
     const t0 = new Date(Date.now() - 2 * 60_000);
     await enviarCodigo(prisma, userId, "EMAIL_CADASTRO", t0);

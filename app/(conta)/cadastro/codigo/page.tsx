@@ -53,6 +53,13 @@ export default function ConfirmarEmail() {
       setErro(r.erro);
       return;
     }
+    // O email já tinha sido confirmado (ex.: em outro aparelho): atualiza a sessão e segue
+    if (r.dados.jaConfirmado) {
+      await update();
+      router.push("/cadastro/foto");
+      router.refresh();
+      return;
+    }
     setChave((c) => c + 1);
     setEspera(ESPERA_SEGUNDOS);
     setAviso("Mandamos um código novo.");

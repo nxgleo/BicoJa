@@ -86,18 +86,33 @@ export async function conferirCodigo(
   if (atual.tentativas >= MAX_TENTATIVAS) return { ok: false, motivo: "tentativas" };
   if (atual.expiraEm.getTime() < agora.getTime()) return { ok: false, motivo: "expirado" };
 
+  // Gasta a tentativa ANTES de conferir, numa operação só do banco:
+  // assim vários pedidos ao mesmo tempo não conseguem passar do limite de 5.
+  const reservada = await prisma.codigoVerificacao.updateMany({
+    where: { id: atual.id, usadoEm: null, tentativas: { lt: MAX_TENTATIVAS } },
+    data: { tentativas: { increment: 1 } },
+  });
+  if (reservada.count === 0) return { ok: false, motivo: "tentativas" };
+
   const esperado = Buffer.from(atual.codigoHash, "hex");
   const recebido = Buffer.from(hashDoCodigo(userId, tipo, codigo), "hex");
   const confere = esperado.length === recebido.length && timingSafeEqual(esperado, recebido);
 
   if (!confere) {
-    const tentativas = atual.tentativas + 1;
-    await prisma.codigoVerificacao.update({ where: { id: atual.id }, data: { tentativas } });
+    const { tentativas } = await prisma.codigoVerificacao.findUniqueOrThrow({
+      where: { id: atual.id },
+      select: { tentativas: true },
+    });
     if (tentativas >= MAX_TENTATIVAS) return { ok: false, motivo: "tentativas" };
     return { ok: false, motivo: "errado", restantes: MAX_TENTATIVAS - tentativas };
   }
 
-  await prisma.codigoVerificacao.update({ where: { id: atual.id }, data: { usadoEm: agora } });
+  // Código certo: marca como usado só se ninguém usou antes (dois pedidos ao mesmo tempo)
+  const usado = await prisma.codigoVerificacao.updateMany({
+    where: { id: atual.id, usadoEm: null },
+    data: { usadoEm: agora },
+  });
+  if (usado.count === 0) return { ok: false, motivo: "inexistente" };
   if (tipo === "EMAIL_CADASTRO") {
     await prisma.user.update({ where: { id: userId }, data: { emailVerified: agora } });
   }

@@ -55,5 +55,9 @@ describe("caminhoSeguro", () => {
     expect(caminhoSeguro("https://evil.com")).toBe("/");
     expect(caminhoSeguro("/\\evil.com")).toBe("/");
     expect(caminhoSeguro(null)).toBe("/");
+    // Tabulação/quebra de linha são apagadas pelo navegador: "/\t/evil.com" vira "//evil.com"
+    expect(caminhoSeguro("/\t/evil.com")).toBe("/");
+    expect(caminhoSeguro("/\n/evil.com")).toBe("/");
+    expect(caminhoSeguro("/perfil?aba=dados")).toBe("/perfil?aba=dados");
   });
 });

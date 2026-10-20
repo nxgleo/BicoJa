@@ -54,6 +54,15 @@ export function destinoParaPagina(caminho: string, token: Token): string | null 
 
 /** Só aceita voltar para páginas do próprio BicoJá (evita mandar a pessoa para site falso). */
 export function caminhoSeguro(voltar: string | null | undefined): string {
-  if (!voltar || !voltar.startsWith("/") || voltar.startsWith("//") || voltar.includes("\\")) return "/";
-  return voltar;
+  if (!voltar || !voltar.startsWith("/")) return "/";
+  // O navegador apaga tabulação/quebra de linha ("/\t/site.com" vira "//site.com"),
+  // então interpretamos o endereço do mesmo jeito que ele e exigimos que continue no BicoJá.
+  try {
+    const base = "http://bicoja.local";
+    const url = new URL(voltar, base);
+    if (url.origin !== base || voltar.includes("\\") || /[\u0000-\u001f\u007f]/.test(voltar)) return "/";
+    return url.pathname + url.search;
+  } catch {
+    return "/";
+  }
 }
