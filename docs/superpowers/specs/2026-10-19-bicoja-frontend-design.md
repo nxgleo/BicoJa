@@ -136,6 +136,9 @@ Rotas novas (todas com sessão, validação com `zod` e rate limit): cadastro em
 - Telefone e endereço só aparecem depois de "Combinado". [Claude]
 - O chat **continua aberto depois** de combinar e pagar. [Kazuo]
 - **Os dois lados** podem enviar proposta. Uma conversa pode gerar mais de um contrato com o tempo (serviço repetido). Ao aceitar uma proposta ligada a um pedido, o pedido vira FECHADO e as outras conversas daquele pedido recebem a mensagem de sistema "Esse pedido já foi fechado". [Claude]
+- **Decisões da Fase 4** [Kazuo, 2026-10-20]: "visto" (✓✓) nas mensagens, "digitando...", bloquear e denunciar no chat; 1 foto por mensagem; ao "Combinado ✔" já aparecem celular dos dois e o endereço do cliente para o prestador (o pagamento vem na Fase 5).
+- **Formato do chat** [Claude]: uma conversa por dupla (quem contrata × quem trabalha); a origem (anúncio/pedido) mais recente aparece no topo. Só uma proposta pendente por vez: mandar outra (ou "Negociar") troca a anterior. Mensagens são enviadas pela API (com validação e limite); o socket só avisa em tempo real. Fotos do chat só abrem para quem está na conversa. Links no chat não viram clicáveis (evita golpe).
+- Tela de entrar e de cadastro sempre abrem do começo; o passo do cadastro que falta é retomado depois de entrar. [Kazuo, 2026-10-20]
 - **Pedido urgente** avisa prestadores da categoria com "Estou disponível" ligado, dentro do raio de atendimento de cada um. [Claude]
 - Notificação (push + no app) para mensagem nova, proposta, pedido urgente perto, pagamento e conclusão.
 - Texto e **foto** agora (reaproveita o upload seguro); **áudio e vídeo depois**. [Kazuo: áudio/foto/vídeo se der; recorte: Claude]

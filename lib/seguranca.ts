@@ -12,7 +12,7 @@ const politicaConteudo = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self'",
-  "connect-src 'self' ws: wss:",
+  "connect-src 'self'",
   "worker-src 'self'",
   "manifest-src 'self'",
   "frame-ancestors 'none'",

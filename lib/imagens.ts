@@ -6,8 +6,8 @@ import { mkdir, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import sharp from "sharp";
 
-export type PastaImagem = "fotos" | "pedidos" | "anuncios";
-const PASTAS: PastaImagem[] = ["fotos", "pedidos", "anuncios"];
+export type PastaImagem = "fotos" | "pedidos" | "anuncios" | "chat";
+const PASTAS: PastaImagem[] = ["fotos", "pedidos", "anuncios", "chat"];
 
 export const TAMANHO_MAXIMO_IMAGEM = 5 * 1024 * 1024;
 const FORMATOS_ACEITOS = new Set(["jpeg", "png", "webp"]);

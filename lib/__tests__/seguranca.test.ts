@@ -29,7 +29,8 @@ describe("cabeçalhos de segurança", () => {
     const csp = valor("Content-Security-Policy");
     expect(csp).toContain("default-src 'self'");
     expect(csp).toContain("frame-ancestors 'none'");
-    expect(csp).toContain("connect-src 'self' ws: wss:");
+    expect(csp).toContain("connect-src 'self'");
+    expect(csp).not.toContain("ws: wss:");
     expect(csp).toContain("img-src 'self' data: blob:");
   });
 });

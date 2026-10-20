@@ -20,7 +20,7 @@ function diaDeHoje(hoje: Date): number {
   return diaDe(DIA_NO_BRASIL.format(hoje)); // "2026-10-20"
 }
 
-const esquemaQuando = z.object({
+export const esquemaQuando = z.object({
   tipo: z.enum(["DIA_CERTO", "ENTRE_DIAS", "QUALQUER_DIA"]),
   dataInicio: z.string().regex(DATA, "Escolha uma data.").optional(),
   dataFim: z.string().regex(DATA, "Escolha uma data.").optional(),
@@ -48,26 +48,29 @@ export function criarEsquemaPedido(hoje: Date = new Date()) {
       // Pedido urgente é "agora": não tem data marcada
       dados.urgente ? { ...dados, quando: { tipo: "QUALQUER_DIA" as const } } : dados
     )
-    .superRefine((dados, ctx) => {
-      const q = dados.quando;
-      const erro = (campo: keyof Quando, message: string) =>
-        ctx.addIssue({ code: "custom", path: ["quando", campo], message });
+    .superRefine((dados, ctx) =>
+      conferirQuando(dados.quando, hoje, (campo, message) =>
+        ctx.addIssue({ code: "custom", path: ["quando", campo], message })
+      )
+    );
+}
 
-      if (q.tipo !== "QUALQUER_DIA") {
-        if (!q.dataInicio) return erro("dataInicio", "Escolha uma data.");
-        if (diaDe(q.dataInicio) < diaDeHoje(hoje)) return erro("dataInicio", "Escolha hoje ou um dia depois.");
-      }
-      if (q.tipo === "ENTRE_DIAS") {
-        if (!q.dataFim) return erro("dataFim", "Escolha a data final.");
-        if (diaDe(q.dataFim) < diaDe(q.dataInicio!)) return erro("dataFim", "A data final vem depois da inicial.");
-        if (diaDe(q.dataFim) - diaDe(q.dataInicio!) > MAX_JANELA_DIAS) {
-          return erro("dataFim", `Escolha um período de até ${MAX_JANELA_DIAS} dias.`);
-        }
-      }
-      if (q.horaInicio && q.horaFim && q.horaFim <= q.horaInicio) {
-        erro("horaFim", "O horário final vem depois do inicial.");
-      }
-    });
+/** Regras do "quando" (também usadas na proposta do chat). Chama erro() no primeiro problema. */
+export function conferirQuando(q: Quando, hoje: Date, erro: (campo: keyof Quando, message: string) => void) {
+  if (q.tipo !== "QUALQUER_DIA") {
+    if (!q.dataInicio) return erro("dataInicio", "Escolha uma data.");
+    if (diaDe(q.dataInicio) < diaDeHoje(hoje)) return erro("dataInicio", "Escolha hoje ou um dia depois.");
+  }
+  if (q.tipo === "ENTRE_DIAS") {
+    if (!q.dataFim) return erro("dataFim", "Escolha a data final.");
+    if (diaDe(q.dataFim) < diaDe(q.dataInicio!)) return erro("dataFim", "A data final vem depois da inicial.");
+    if (diaDe(q.dataFim) - diaDe(q.dataInicio!) > MAX_JANELA_DIAS) {
+      return erro("dataFim", `Escolha um período de até ${MAX_JANELA_DIAS} dias.`);
+    }
+  }
+  if (q.horaInicio && q.horaFim && q.horaFim <= q.horaInicio) {
+    erro("horaFim", "O horário final vem depois do inicial.");
+  }
 }
 
 export type DadosPedido = z.infer<ReturnType<typeof criarEsquemaPedido>>;
