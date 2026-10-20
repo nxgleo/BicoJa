@@ -1,24 +1,25 @@
 import Link from "next/link";
-import { RefreshCw, SearchX, WifiOff } from "lucide-react";
+import { RefreshCw, UserRoundSearch, WifiOff } from "lucide-react";
 import { CartaoServico, EstadoVazio } from "@/components/ui";
-import type { ServicoResumo } from "@/lib/servicos";
+import { CATEGORIAS } from "@/lib/categorias";
+import type { PrestadorResumo } from "@/lib/prestadores";
 
-type Props = { servicos: ServicoResumo[]; erro?: boolean };
+type Props = { prestadores: PrestadorResumo[]; erro?: boolean };
 
-// Fase 1: mostra os anúncios mais recentes. Na Fase 3 passa a mostrar quem está com "Estou disponível" ligado.
-export function SecaoDisponiveis({ servicos, erro = false }: Props) {
+function nomesCategorias(ids: string[]): string {
+  return ids
+    .map((id) => CATEGORIAS.find((c) => c.id === id)?.nome)
+    .filter(Boolean)
+    .join(", ");
+}
+
+/** Prestadores com "Estou disponível agora" ligado (perto do cliente, quando ele tem endereço). */
+export function SecaoDisponiveis({ prestadores, erro = false }: Props) {
   return (
     <section aria-labelledby="titulo-disponiveis" className="flex flex-col gap-3">
-      <div className="flex items-baseline justify-between">
-        <h2 id="titulo-disponiveis" className="text-xl font-black">
-          Disponíveis agora
-        </h2>
-        {!erro && servicos.length > 0 && (
-          <Link href="/buscar" className="rounded-lg px-1 font-extrabold text-marca-texto hover:underline focus-visible:outline-3 focus-visible:outline-foco">
-            Ver todos
-          </Link>
-        )}
-      </div>
+      <h2 id="titulo-disponiveis" className="text-xl font-black">
+        Disponíveis agora
+      </h2>
 
       {erro ? (
         <div role="status" className="flex flex-col items-center gap-3 rounded-2xl bg-superficie-suave px-5 py-8 text-center">
@@ -32,22 +33,25 @@ export function SecaoDisponiveis({ servicos, erro = false }: Props) {
             Tentar de novo
           </Link>
         </div>
-      ) : servicos.length === 0 ? (
+      ) : prestadores.length === 0 ? (
         <EstadoVazio
-          icone={SearchX}
-          titulo="Ainda não tem ninguém por aqui"
-          texto="Conte o que você precisa e os prestadores mandam propostas."
+          icone={UserRoundSearch}
+          titulo="Ninguém disponível agora"
+          texto="Publique seu pedido: os prestadores perto de você recebem e mandam propostas."
           acao={{ rotulo: "Publicar meu pedido", href: "/pedidos/novo" }}
         />
       ) : (
         <ul className="flex flex-col gap-3">
-          {servicos.map((servico) => (
-            <li key={servico.id}>
+          {prestadores.map((p) => (
+            <li key={p.id}>
               <CartaoServico
-                titulo={servico.titulo}
-                nomePrestador={servico.prestador.nome ?? "Prestador"}
-                precoAPartirDe={servico.preco}
-                href={`/servicos/${servico.id}`}
+                titulo={p.nome}
+                nomePrestador={nomesCategorias(p.categorias)}
+                fotoUrl={p.foto}
+                distanciaKm={p.distanciaKm}
+                precoAPartirDe={p.precoBase}
+                online={p.disponivelAgora}
+                href={`/prestadores/${p.id}`}
               />
             </li>
           ))}

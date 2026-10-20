@@ -7,24 +7,28 @@ import { ListaCategorias } from "@/components/inicio/ListaCategorias";
 import { SecaoDisponiveis } from "@/components/inicio/SecaoDisponiveis";
 
 describe("SecaoDisponiveis", () => {
-  test("sem serviços mostra convite para publicar pedido", () => {
-    render(<SecaoDisponiveis servicos={[]} />);
+  test("ninguém disponível mostra convite para publicar pedido", () => {
+    render(<SecaoDisponiveis prestadores={[]} />);
+    expect(screen.getByText("Ninguém disponível agora")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Publicar meu pedido" })).toHaveAttribute("href", "/pedidos/novo");
   });
 
   test("com erro avisa e oferece tentar de novo", () => {
-    render(<SecaoDisponiveis servicos={[]} erro />);
+    render(<SecaoDisponiveis prestadores={[]} erro />);
     expect(screen.getByText("Não conseguimos carregar agora.")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Tentar de novo" })).toBeInTheDocument();
   });
 
-  test("mostra os serviços como cartões", () => {
+  test("mostra quem está disponível com link para o perfil", () => {
     render(
       <SecaoDisponiveis
-        servicos={[{ id: "1", titulo: "Conserto de pia", descricao: "", preco: 80, prestador: { id: "p", nome: "João" } }]}
+        prestadores={[{ id: "p1", nome: "João", foto: null, categorias: ["encanamento"], bairro: "Marco", cidade: "Belém", precoBase: 80, distanciaKm: 1.2, disponivelAgora: true }]}
       />
     );
-    expect(screen.getByRole("link", { name: /Conserto de pia/ })).toHaveAttribute("href", "/servicos/1");
+    const link = screen.getByRole("link", { name: /João/ });
+    expect(link).toHaveAttribute("href", "/prestadores/p1");
+    expect(link).toHaveTextContent("Encanamento");
+    expect(screen.getAllByText("Disponível agora").length).toBeGreaterThan(0);
   });
 });
 

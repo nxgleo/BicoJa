@@ -5,6 +5,10 @@ import { CartaoServico, Chip, EstadoVazio } from "@/components/ui";
 import { interpretarBusca, normalizar } from "@/lib/busca";
 import { CATEGORIAS, type CategoriaId } from "@/lib/categorias";
 import { buscarServicos, type ServicoResumo } from "@/lib/servicos";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { enderecoDoUsuario } from "@/lib/enderecos";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +29,9 @@ export default async function Buscar({ searchParams }: Props) {
   let servicos: ServicoResumo[] = [];
   let erro = false;
   try {
-    servicos = await buscarServicos({ texto, categoria }, 30);
+    const sessao = await getServerSession(authOptions);
+    const perto = sessao?.user?.id ? await enderecoDoUsuario(prisma, sessao.user.id) : null;
+    servicos = await buscarServicos({ texto, categoria, perto }, 30);
   } catch (e) {
     console.error("Erro na busca:", e);
     erro = true;
@@ -81,6 +87,7 @@ export default async function Buscar({ searchParams }: Props) {
                   titulo={s.titulo}
                   nomePrestador={s.prestador.nome ?? "Prestador"}
                   precoAPartirDe={s.preco}
+                  distanciaKm={s.distanciaKm}
                   href={`/servicos/${s.id}`}
                 />
               </li>

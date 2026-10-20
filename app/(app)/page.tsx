@@ -1,12 +1,15 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { listarServicosRecentes, type ServicoResumo } from "@/lib/servicos";
+import { anunciosPerto, listarServicosRecentes, type ServicoResumo } from "@/lib/servicos";
+import { enderecoDoUsuario } from "@/lib/enderecos";
+import { prestadoresDisponiveis, type PrestadorResumo } from "@/lib/prestadores";
 import { Aparecer } from "@/components/ui/Aparecer";
 import { BuscaPrincipal } from "@/components/inicio/BuscaPrincipal";
 import { BotaoAjudaAgora } from "@/components/inicio/BotaoAjudaAgora";
 import { ListaCategorias } from "@/components/inicio/ListaCategorias";
 import { SecaoDisponiveis } from "@/components/inicio/SecaoDisponiveis";
+import { SecaoAnuncios } from "@/components/inicio/SecaoAnuncios";
 import { CartaoPublicarPedido } from "@/components/inicio/CartaoPublicarPedido";
 import { CartaoFazerBicos } from "@/components/inicio/CartaoFazerBicos";
 
@@ -20,10 +23,15 @@ export default async function Inicio() {
     ? Boolean(await prisma.perfilPrestador.findUnique({ where: { userId: sessao.user.id }, select: { id: true } }).catch(() => null))
     : false;
 
-  let servicos: ServicoResumo[] = [];
+  let prestadores: PrestadorResumo[] = [];
+  let anuncios: ServicoResumo[] = [];
+  let temEndereco = false;
   let erro = false;
   try {
-    servicos = await listarServicosRecentes(6);
+    const endereco = sessao?.user?.id ? await enderecoDoUsuario(prisma, sessao.user.id) : null;
+    temEndereco = Boolean(endereco);
+    prestadores = await prestadoresDisponiveis(prisma, endereco, 6);
+    anuncios = endereco ? await anunciosPerto(endereco, 6) : await listarServicosRecentes(6);
   } catch (e) {
     console.error("Erro ao carregar serviços da tela inicial:", e);
     erro = true;
@@ -50,8 +58,14 @@ export default async function Inicio() {
       </Aparecer>
 
       <Aparecer atraso={0.1}>
-        <SecaoDisponiveis servicos={servicos} erro={erro} />
+        <SecaoDisponiveis prestadores={prestadores} erro={erro} />
       </Aparecer>
+
+      {!erro && (
+        <Aparecer atraso={0.12}>
+          <SecaoAnuncios titulo={temEndereco ? "Anúncios perto de você" : "Anúncios recentes"} anuncios={anuncios} />
+        </Aparecer>
+      )}
 
       <Aparecer atraso={0.15}>
         <div className="flex flex-col gap-4">

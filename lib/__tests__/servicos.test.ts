@@ -5,8 +5,8 @@ vi.mock("@/lib/prisma", () => ({ prisma: { servico: { findMany } } }));
 
 import { buscarServicos, listarServicosRecentes } from "@/lib/servicos";
 
-function servico(id: string, titulo: string, descricao = "") {
-  return { id, titulo, descricao, preco: 100, prestador: { id: "p" + id, nome: "Prestador " + id } };
+function servico(id: string, titulo: string, descricao = "", categoria = "outros") {
+  return { id, titulo, descricao, categoria, fotos: [], preco: 100, latitude: -1.43, longitude: -48.47, prestador: { id: "p" + id, nome: "Prestador " + id } };
 }
 
 beforeEach(() => findMany.mockReset());
@@ -18,6 +18,7 @@ describe("listarServicosRecentes", () => {
     const args = findMany.mock.calls[0][0];
     expect(args.take).toBe(6);
     expect(args.orderBy).toEqual({ createdAt: "desc" });
+    expect(args.where).toEqual({ ativo: true });
     expect(args.select.prestador).toEqual({ select: { id: true, nome: true } });
   });
 });
@@ -38,10 +39,27 @@ describe("buscarServicos", () => {
     expect(achados.map((s) => s.id)).toEqual(["2"]);
   });
 
-  test("filtra por categoria", async () => {
-    findMany.mockResolvedValue([servico("1", "Faxina pós-obra"), servico("2", "Frete pequeno")]);
+  test("filtra pela categoria salva, só anúncios ativos", async () => {
+    findMany.mockResolvedValue([servico("1", "Faxina pós-obra", "", "limpeza")]);
     const achados = await buscarServicos({ categoria: "limpeza" }, 20);
+    expect(findMany.mock.calls[0][0].where).toEqual({ ativo: true, categoria: "limpeza" });
     expect(achados.map((s) => s.id)).toEqual(["1"]);
+  });
+
+  test("texto acha pela categoria salva mesmo sem a palavra no título", async () => {
+    findMany.mockResolvedValue([servico("1", "Serviços gerais", "Faço de tudo", "encanamento"), servico("2", "Pintura", "", "pintura")]);
+    const achados = await buscarServicos({ texto: "minha pia tá vazando" }, 20);
+    expect(achados.map((s) => s.id)).toEqual(["1"]);
+  });
+
+  test("com localização, calcula a distância e ordena pelo mais perto", async () => {
+    findMany.mockResolvedValue([
+      { ...servico("longe", "Pintura"), latitude: -1.5 },
+      { ...servico("perto", "Pintura"), latitude: -1.431 },
+    ]);
+    const achados = await buscarServicos({ perto: { latitude: -1.43, longitude: -48.47 } }, 20);
+    expect(achados.map((s) => s.id)).toEqual(["perto", "longe"]);
+    expect(achados[0].distanciaKm).toBeLessThan(1);
   });
 
   test("respeita o limite", async () => {

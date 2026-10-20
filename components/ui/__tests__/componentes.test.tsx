@@ -68,6 +68,11 @@ describe("CartaoServico", () => {
     expect(screen.getByText(/R\$\s*80,00/)).toBeInTheDocument();
   });
 
+  test("preço 0 aparece como 'a combinar'", () => {
+    render(<CartaoServico {...base} precoAPartirDe={0} />);
+    expect(screen.getByText("Preço a combinar")).toBeInTheDocument();
+  });
+
   test("mostra distância com vírgula", () => {
     render(<CartaoServico {...base} distanciaKm={1.234} />);
     expect(screen.getByText(/1,2 km/)).toBeInTheDocument();

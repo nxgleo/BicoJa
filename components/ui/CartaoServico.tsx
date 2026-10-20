@@ -49,12 +49,15 @@ export function CartaoServico({
           {distanciaKm != null && <span>· {formatarDistancia(distanciaKm)}</span>}
         </p>
       </div>
-      {precoAPartirDe != null && (
-        <div className="shrink-0 text-right">
-          <p className="text-sm text-texto-suave">a partir de</p>
-          <p className="font-black text-texto">{formatarPreco(precoAPartirDe)}</p>
-        </div>
-      )}
+      {precoAPartirDe != null &&
+        (precoAPartirDe > 0 ? (
+          <div className="shrink-0 text-right">
+            <p className="text-sm text-texto-suave">a partir de</p>
+            <p className="font-black text-texto">{formatarPreco(precoAPartirDe)}</p>
+          </div>
+        ) : (
+          <p className="max-w-20 shrink-0 text-right text-sm font-bold text-texto-suave">Preço a combinar</p>
+        ))}
     </Link>
   );
 }
