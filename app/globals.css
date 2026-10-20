@@ -1,26 +1,80 @@
 @import "tailwindcss";
 
+/* Tema escuro ativado pela classe "escuro" no <html> (ver components/layout/ScriptTema.tsx) */
+@custom-variant dark (&:where(.escuro, .escuro *));
+
+/* Paleta do BicoJá — mesmos valores de lib/cores.ts (testados para contraste AA) */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --cor-fundo: #ffffff;
+  --cor-superficie: #ffffff;
+  --cor-superficie-suave: #f3f4f6;
+  --cor-texto: #1f2937;
+  --cor-texto-suave: #4b5563;
+  --cor-marca: #e8770c;
+  --cor-marca-texto: #9a4a06;
+  --cor-marca-suave: #fff4e8;
+  --cor-botao: #b45309;
+  --cor-texto-sobre-marca: #ffffff;
+  --cor-urgencia: #dc2626;
+  --cor-sucesso: #16a34a;
+  --cor-borda: #e5e7eb;
+  color-scheme: light;
+}
+
+.escuro {
+  --cor-fundo: #14181c;
+  --cor-superficie: #1c2228;
+  --cor-superficie-suave: #242b33;
+  --cor-texto: #f3f4f6;
+  --cor-texto-suave: #b6c0ca;
+  --cor-marca: #e8770c;
+  --cor-marca-texto: #ffa552;
+  --cor-marca-suave: #3a2614;
+  --cor-botao: #b45309;
+  --cor-texto-sobre-marca: #ffffff;
+  --cor-urgencia: #dc2626;
+  --cor-sucesso: #22c55e;
+  --cor-borda: #2e363f;
+  color-scheme: dark;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-fundo: var(--cor-fundo);
+  --color-superficie: var(--cor-superficie);
+  --color-superficie-suave: var(--cor-superficie-suave);
+  --color-texto: var(--cor-texto);
+  --color-texto-suave: var(--cor-texto-suave);
+  --color-marca: var(--cor-marca);
+  --color-marca-texto: var(--cor-marca-texto);
+  --color-marca-suave: var(--cor-marca-suave);
+  --color-botao: var(--cor-botao);
+  --color-texto-sobre-marca: var(--cor-texto-sobre-marca);
+  --color-urgencia: var(--cor-urgencia);
+  --color-sucesso: var(--cor-sucesso);
+  --color-borda: var(--cor-borda);
+  --font-sans: var(--font-nunito), system-ui, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  font-size: 17px;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--cor-fundo);
+  color: var(--cor-texto);
+  font-family: var(--font-nunito), system-ui, sans-serif;
+  line-height: 1.5;
+}
+
+/* Quem pediu "reduzir movimento" no celular não vê animações */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
