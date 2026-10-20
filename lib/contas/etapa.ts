@@ -29,10 +29,10 @@ export function destinoParaPagina(caminho: string, token: Token): string | null 
   const etapa = token ? etapaDoCadastro(token) : null;
   const telaQueFalta = etapa && etapa !== "completo" ? TELA_DA_ETAPA[etapa] : null;
 
-  // Entrar / começar cadastro
+  // Entrar / começar cadastro: sempre abrem do começo (mesmo com cadastro pela metade).
+  // O passo que falta é retomado depois de entrar.
   if (caminho === "/entrar" || caminho === "/cadastro") {
-    if (!token) return null;
-    return telaQueFalta ?? "/";
+    return etapa === "completo" ? "/" : null;
   }
 
   // Passos do cadastro depois de criar a conta

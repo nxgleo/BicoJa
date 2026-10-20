@@ -43,7 +43,13 @@ describe("destinoParaPagina", () => {
     expect(destinoParaPagina("/cadastro/codigo", semFoto)).toBe("/cadastro/foto");
     expect(destinoParaPagina("/cadastro/foto", semEmail)).toBe("/cadastro/codigo");
     expect(destinoParaPagina("/cadastro/codigo", null)).toBe("/entrar?voltar=%2Fcadastro%2Fcodigo");
-    expect(destinoParaPagina("/cadastro", semEmail)).toBe("/cadastro/codigo");
+    expect(destinoParaPagina("/cadastro/codigo", semEmail)).toBeNull();
+  });
+
+  test("entrar e cadastro sempre abrem do começo se o cadastro está pela metade", () => {
+    expect(destinoParaPagina("/entrar", semEmail)).toBeNull();
+    expect(destinoParaPagina("/entrar", semFoto)).toBeNull();
+    expect(destinoParaPagina("/cadastro", semEmail)).toBeNull();
     expect(destinoParaPagina("/cadastro/codigo", semEmail)).toBeNull();
   });
 });

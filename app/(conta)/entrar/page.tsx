@@ -3,10 +3,10 @@
 import { Suspense, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { signIn } from "next-auth/react";
+import { getSession, signIn } from "next-auth/react";
 import { Botao, Campo } from "@/components/ui";
 import { CampoSenha } from "@/components/conta/CampoSenha";
-import { caminhoSeguro } from "@/lib/contas/etapa";
+import { caminhoSeguro, etapaDoCadastro } from "@/lib/contas/etapa";
 import { focarCampo } from "@/lib/cliente/api";
 
 function FormularioEntrar() {
@@ -33,7 +33,10 @@ function FormularioEntrar() {
       focarCampo("identificador");
       return;
     }
-    router.push(voltar);
+    // Cadastro pela metade: continua do passo que falta
+    const usuario = (await getSession())?.user;
+    const etapa = usuario ? etapaDoCadastro(usuario) : "completo";
+    router.push(etapa === "codigo" ? "/cadastro/codigo" : etapa === "foto" ? "/cadastro/foto" : voltar);
     router.refresh();
   }
 
