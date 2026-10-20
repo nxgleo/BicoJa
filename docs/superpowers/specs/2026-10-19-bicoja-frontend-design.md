@@ -129,8 +129,7 @@ Rotas novas (todas com sessão, validação com `zod` e rate limit): cadastro em
 
 - Começa quando um dos dois toca "Conversar" no perfil/anúncio/pedido do outro. [Kazuo]
 - Tempo real via Socket.IO; mensagens também salvas no banco; indicador de não lidas.
-- **Proposta** é um cartão dentro do chat (valor + dia/janela) com três botões: **"Aceitar"**, **"Negociar"** (abre o mesmo cartão para editar valor/data e mandar uma contraproposta) e **"Não aceito"** (só recusa aquela proposta, a conversa continua — evita parecer que cancela tudo). Aceitar cria o Contrato e mostra "Combinado ✔". [Kazuo; textos: Claude]
-- **Aceitar sem chat:** o prestador pode mandar proposta direto num pedido, e o cliente pode tocar "Contratar" direto num anúncio pelo preço dele; o outro lado pode aceitar pela lista de propostas sem conversar. Em toda tela de aceitar/combinado aparece claro: "Você pode conversar com Fulano quando quiser" + botão Conversar. [Kazuo]
+- **Proposta** é um cartão dentro do chat (valor + dia/janela) com três botões: **"Aceitar"**, **"Negociar"** (abre o mesmo cartão para editar valor/data e mandar uma contraproposta) e **"Recusar"** (recusa só aquela proposta; a conversa continua aberta). Aceitar cria o Contrato e mostra "Combinado ✔". [Kazuo; textos: Claude]
 - **Bolha de conversa flutuante:** enquanto a pessoa tem uma conversa ativa e sai da tela do chat, aparece um ícone redondo de chat no canto inferior direito (acima do menu), com contador de não lidas; tocar volta para aquela conversa. Pode ser dispensado. [Kazuo; posição exata: Claude]
 - Telefone e endereço só aparecem depois de "Combinado". [Claude]
 - O chat **continua aberto depois** de combinar e pagar. [Kazuo]
