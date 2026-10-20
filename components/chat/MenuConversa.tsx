@@ -46,8 +46,18 @@ export function MenuConversa({ conversaId, nomeOutro, bloqueadoPorMim, onBloquei
   }
 
   return (
-    <div className="relative">
+    <div
+      className="relative"
+      onKeyDown={(e) => {
+        // Esc fecha o menu e volta o foco para o botão "Opções"
+        if (e.key === "Escape" && tela !== "fechado") {
+          setTela("fechado");
+          document.getElementById("botao-opcoes")?.focus();
+        }
+      }}
+    >
       <Botao
+        id="botao-opcoes"
         variante="fantasma"
         icone={MoreVertical}
         aria-expanded={tela !== "fechado"}

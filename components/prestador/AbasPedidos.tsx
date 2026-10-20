@@ -33,7 +33,16 @@ export function AbasPedidos({ urgentes, pedidos }: { urgentes: PedidoParaPrestad
               id={`aba-${id}`}
               aria-selected={ativa}
               aria-controls={`painel-${id}`}
+              tabIndex={ativa ? 0 : -1}
               onClick={() => setAba(id)}
+              onKeyDown={(e) => {
+                // Setas trocam de aba (padrão de abas para teclado e leitor de tela)
+                if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+                e.preventDefault();
+                const outra = id === "urgentes" ? "pedidos" : "urgentes";
+                setAba(outra);
+                document.getElementById(`aba-${outra}`)?.focus();
+              }}
               className={`flex min-h-12 items-center justify-center gap-2 rounded-xl font-extrabold transition-all duration-200 focus-visible:outline-3 focus-visible:outline-foco ${
                 ativa ? "bg-superficie text-texto shadow-sm" : "text-texto-suave"
               }`}
