@@ -350,7 +350,7 @@ export async function detalheContrato(prisma: PrismaClient, id: string, userId: 
     podeNaoAconteceu: papel === "cliente" && combinado && agora >= naoAconteceuEm,
     naoAconteceuEm: naoAconteceuEm.toISOString(),
     liberaEm: combinado && pago ? liberaEm.toISOString() : null,
-    minhaAvaliacao: c.avaliacoes[0] ?? null,
+    minhaAvaliacao: c.avaliacoes.at(0) ?? null,
   };
 }
 export type DetalheContrato = NonNullable<Awaited<ReturnType<typeof detalheContrato>>>;
