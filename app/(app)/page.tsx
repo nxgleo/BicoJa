@@ -1,5 +1,6 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import { listarServicosRecentes, type ServicoResumo } from "@/lib/servicos";
 import { Aparecer } from "@/components/ui/Aparecer";
 import { BuscaPrincipal } from "@/components/inicio/BuscaPrincipal";
@@ -14,6 +15,10 @@ export const dynamic = "force-dynamic";
 export default async function Inicio() {
   const sessao = await getServerSession(authOptions);
   const primeiroNome = sessao?.user?.name?.split(" ")[0];
+  // Quem já faz bicos não precisa do convite "Quero fazer bicos"
+  const jaEhPrestador = sessao?.user?.id
+    ? Boolean(await prisma.perfilPrestador.findUnique({ where: { userId: sessao.user.id }, select: { id: true } }).catch(() => null))
+    : false;
 
   let servicos: ServicoResumo[] = [];
   let erro = false;
@@ -51,7 +56,7 @@ export default async function Inicio() {
       <Aparecer atraso={0.15}>
         <div className="flex flex-col gap-4">
           <CartaoPublicarPedido />
-          <CartaoFazerBicos />
+          {!jaEhPrestador && <CartaoFazerBicos />}
         </div>
       </Aparecer>
     </div>

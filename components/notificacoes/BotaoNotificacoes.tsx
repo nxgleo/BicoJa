@@ -140,16 +140,17 @@ export function BotaoNotificacoes() {
   const buttonLabel = pushStatus === "enabled" ? "Notificações ativadas" : "Ativar notificações";
 
   return (
-    <div className="flex flex-col items-center gap-2 sm:items-start">
+    <div className="flex flex-col gap-2">
+      <p className="text-texto-suave">Receba um aviso quando chegar mensagem, proposta ou pedido perto de você.</p>
       <button
         type="button"
         onClick={enableNotifications}
         disabled={isSaving || pushStatus === "checking" || pushStatus === "enabled" || !userId}
-        className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
+        className="inline-flex min-h-12 w-full items-center justify-center rounded-2xl bg-superficie-suave px-5 font-extrabold text-texto transition-all duration-200 hover:bg-borda active:scale-[0.98] focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-foco disabled:cursor-not-allowed disabled:opacity-70"
       >
         {isSaving ? "Ativando..." : !userId && sessionStatus !== "loading" ? "Entre para ativar notificações" : buttonLabel}
       </button>
-      <p className="min-h-5 text-sm text-zinc-600 dark:text-zinc-400" aria-live="polite">
+      <p className="min-h-5 text-sm text-texto-suave" aria-live="polite">
         {message || (pushStatus === "denied" ? "Permissão bloqueada nas configurações do navegador." : "")}
       </p>
     </div>
