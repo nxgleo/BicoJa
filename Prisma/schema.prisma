@@ -25,6 +25,18 @@ enum TipoCodigo {
   RECUPERAR_SENHA
 }
 
+enum TipoQuando {
+  DIA_CERTO
+  ENTRE_DIAS
+  QUALQUER_DIA
+}
+
+enum StatusPedido {
+  ABERTO
+  FECHADO
+  CANCELADO
+}
+
 enum StatusProposta {
   PENDENTE
   ACEITA
@@ -53,6 +65,8 @@ model User {
   pushSubscriptions   PushSubscription[]
   codigos             CodigoVerificacao[]
   perfilPrestador     PerfilPrestador?
+  endereco            EnderecoUsuario?
+  pedidos             Pedido[]           @relation("PedidosCliente")
 }
 
 model Account {
@@ -100,7 +114,13 @@ model Servico {
   longitude Float
   localizacao Unsupported("geometry(Point, 4326)")?
 
+  // Campos do front novo (Fase 3): anúncio com categoria, fotos e pausa
+  categoria String   @default("outros")
+  ativo     Boolean  @default(true)
+  fotos     String[] @default([])
+
   createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 
   clienteId String?
   cliente User? @relation("ClienteServicos", fields: [clienteId], references: [id])
@@ -164,9 +184,57 @@ model PerfilPrestador {
   raioKm      Int       @default(10)
   precoBase   Float?
   disponivel  Boolean   @default(false)
+  disponivelAte DateTime?
   ultimoSinal DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Endereço que a pessoa salva no perfil (preenche os pedidos e calcula distâncias)
+model EnderecoUsuario {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  rua         String
+  numero      String
+  complemento String?
+  bairro      String
+  cidade      String
+  latitude    Float
+  longitude   Float
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Pedido publicado pelo cliente (normal ou urgente).
+// Prestadores só veem bairro e distância; rua e número ficam para depois de combinar.
+model Pedido {
+  id          String       @id @default(uuid())
+  clienteId   String
+  categoria   String
+  descricao   String
+  fotos       String[]     @default([])
+  urgente     Boolean      @default(false)
+  urgenteAte  DateTime?
+  quandoTipo  TipoQuando
+  dataInicio  DateTime?    @db.Date
+  dataFim     DateTime?    @db.Date
+  horaInicio  String?
+  horaFim     String?
+  rua         String
+  numero      String
+  complemento String?
+  bairro      String
+  cidade      String
+  latitude    Float
+  longitude   Float
+  status      StatusPedido @default(ABERTO)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  cliente User @relation("PedidosCliente", fields: [clienteId], references: [id], onDelete: Cascade)
+
+  @@index([status, categoria])
 }
