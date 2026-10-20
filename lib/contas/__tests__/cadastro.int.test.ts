@@ -1,7 +1,7 @@
 import { afterAll, beforeEach, describe, expect, test } from "vitest";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
-import { criarConta } from "@/lib/contas/cadastro";
+import { criarConta, trocarEmailNaoConfirmado } from "@/lib/contas/cadastro";
 import { esquemaCadastro } from "@/lib/contas/esquemas";
 
 function dados(extra: Record<string, string> = {}) {
@@ -57,5 +57,31 @@ describe("criarConta", () => {
     const falhou = a.ok ? b : a;
     expect(falhou).toMatchObject({ ok: false, campo: "email" });
     expect(await prisma.user.count()).toBe(1);
+  });
+});
+
+describe("trocarEmailNaoConfirmado", () => {
+  test("corrige o email enquanto ainda não foi confirmado", async () => {
+    const r = await criarConta(prisma, dados());
+    if (!r.ok) throw new Error("falhou");
+    expect(await trocarEmailNaoConfirmado(prisma, r.userId, "certo@teste.test")).toEqual({ ok: true });
+    expect((await prisma.user.findUniqueOrThrow({ where: { id: r.userId } })).email).toBe("certo@teste.test");
+  });
+
+  test("não troca email já confirmado", async () => {
+    const r = await criarConta(prisma, dados());
+    if (!r.ok) throw new Error("falhou");
+    await prisma.user.update({ where: { id: r.userId }, data: { emailVerified: new Date() } });
+    expect(await trocarEmailNaoConfirmado(prisma, r.userId, "outro@teste.test")).toMatchObject({ ok: false });
+  });
+
+  test("não troca para email de outra conta", async () => {
+    await criarConta(prisma, dados({ email: "ocupado@teste.test", telefone: "91977776666" }));
+    const r = await criarConta(prisma, dados());
+    if (!r.ok) throw new Error("falhou");
+    expect(await trocarEmailNaoConfirmado(prisma, r.userId, "ocupado@teste.test")).toEqual({
+      ok: false,
+      erro: "Esse email já tem conta. Quer entrar?",
+    });
   });
 });

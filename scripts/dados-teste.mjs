@@ -1,4 +1,7 @@
-// Cria dados de exemplo no banco LOCAL para ver as telas. Uso: node scripts/dados-teste.mjs
+// Cria dados de exemplo no banco LOCAL para ver as telas. Uso: node --env-file=.env scripts/dados-teste.mjs
+//
+// Conta de teste criada pelas telas durante o desenvolvimento (só existe no banco local):
+//   email maria.teste@exemplo.test · celular (91) 90000-0001 · senha laranja-forte-42
 import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 

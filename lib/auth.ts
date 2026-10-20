@@ -12,11 +12,12 @@ import { checkRateLimit } from "@/lib/rate-limit";
 async function dadosDaSessao(id: string) {
   const user = await prisma.user.findUnique({
     where: { id },
-    select: { nome: true, image: true, emailVerified: true, modoAtual: true, role: true },
+    select: { nome: true, email: true, image: true, emailVerified: true, modoAtual: true, role: true },
   });
   if (!user) return null;
   return {
     name: user.nome,
+    email: user.email,
     picture: user.image,
     emailVerificado: Boolean(user.emailVerified),
     temFoto: Boolean(user.image),
@@ -67,6 +68,7 @@ export const authOptions: AuthOptions = {
       if (session.user && token.sub) {
         session.user.id = token.sub;
         session.user.name = token.name ?? null;
+        session.user.email = token.email ?? null;
         session.user.image = token.picture ?? null;
         session.user.emailVerificado = token.emailVerificado ?? false;
         session.user.temFoto = token.temFoto ?? false;

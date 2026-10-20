@@ -49,3 +49,27 @@ export async function criarConta(
     throw erro;
   }
 }
+
+/** "Corrigir o email" na tela do código: só enquanto o email ainda não foi confirmado. */
+export async function trocarEmailNaoConfirmado(
+  prisma: PrismaClient,
+  userId: string,
+  email: string
+): Promise<{ ok: true } | { ok: false; erro: string }> {
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { emailVerified: true } });
+  if (!user) return { ok: false, erro: "Conta não encontrada." };
+  if (user.emailVerified) return { ok: false, erro: "Seu email já foi confirmado e não pode ser trocado aqui." };
+
+  const dono = await prisma.user.findUnique({ where: { email }, select: { id: true } });
+  if (dono && dono.id !== userId) return { ok: false, erro: ERRO_EMAIL };
+
+  try {
+    await prisma.user.update({ where: { id: userId }, data: { email } });
+  } catch (erro) {
+    if (erro instanceof Prisma.PrismaClientKnownRequestError && erro.code === "P2002") return { ok: false, erro: ERRO_EMAIL };
+    throw erro;
+  }
+  // Códigos mandados para o email antigo deixam de valer
+  await prisma.codigoVerificacao.deleteMany({ where: { userId, tipo: "EMAIL_CADASTRO" } });
+  return { ok: true };
+}
