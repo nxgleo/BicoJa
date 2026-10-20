@@ -65,21 +65,23 @@ Referência de sensação: Uber, iFood — fluxo curto, confiança por avaliaç�
 - Linguagem simples, frases curtas, verbos de ação nos botões ("Conversar", "Enviar pedido").
 - Erros dizem o que fazer ("Esse email já tem conta. Quer entrar?").
 - Navegável por teclado e leitor de tela (HTML semântico, `aria-*`, foco visível).
-- Campos com `inputmode`/`autocomplete` certos (teclado numérico em CPF, telefone, código).
-- Máscaras de CPF e telefone; aceitar com ou sem pontuação.
+- Campos com `inputmode`/`autocomplete` certos (teclado numérico em telefone e código).
+- Máscara de telefone; aceitar com ou sem pontuação.
 - Uma ação principal por tela.
 
 ## 7. Contas, cadastro e modos
 
 - **Uma conta só, com troca de modo** (cliente ↔ prestador), cada modo com seu menu. Quem escolheu só um modo no cadastro pode ativar o outro **a qualquer momento**. [Kazuo]
 - Primeira tela do cadastro: "O que você quer fazer? Contratar · Trabalhar · Os dois" — só define o modo inicial. [Kazuo, a partir de proposta]
-- Passos: dados (nome, email, telefone, senha) → **código de 6 dígitos no email** → **CPF + foto do rosto** (obrigatório para **todos**, cliente e prestador) → pronto. Cada tela explica por que pedimos o dado. [Kazuo]
-- A foto do rosto **é a foto de perfil pública** (aparece no perfil, resultados e chat, para a pessoa saber quem vai chegar). Uma foto só. A tela diz isso claramente; o texto "protegido" vale para o CPF, não para a foto. [Kazuo]
-- Usuários já existentes no banco (dados de teste): campos novos ficam opcionais no banco; quem entrar sem CPF/foto/email verificado é levado a "Termine seu cadastro" antes de conversar, publicar ou contratar. A rota antiga `/api/register` não é apagada, só deixa de ser usada pelo front. [Claude]
+- Passos: escolha (Contratar · Fazer bicos · Os dois) → dados (nome, email, celular, senha) → **código de 6 dígitos no email** → **foto do rosto** (obrigatória para **todos**) → pronto. Cada tela explica por que pedimos o dado. **Sem CPF por enquanto** (decidido em 2026-10-20). [Kazuo]
+- **Continua de onde parou:** a conta é criada no passo "dados" e a pessoa já fica logada; se fechar o app, na próxima vez é levada ao passo que falta (código ou foto). [Kazuo]
+- **Entrar** com "Email ou celular" + senha. **Senha:** mínimo 8 caracteres, bloqueia senhas óbvias e que contenham o nome/email, botão "Mostrar". **Esqueci minha senha:** código de 6 dígitos no email → senha nova. **Foto:** "Tirar foto agora" (câmera frontal) ou "Escolher da galeria", com prévia e dicas. [Kazuo]
+- A foto do rosto **é a foto de perfil pública** (aparece no perfil, resultados e chat, para a pessoa saber quem vai chegar). Uma foto só. A tela diz isso claramente; não dizer que a foto é "protegida". [Kazuo]
+- Usuários já existentes no banco (dados de teste): campos novos ficam opcionais no banco; quem entrar sem foto ou email verificado é levado a "Termine seu cadastro" antes de conversar, publicar ou contratar. A rota antiga `/api/register` não é apagada, só deixa de ser usada pelo front. [Claude]
 - Virar prestador fica óbvio: cartão fixo no Início ("💰 Quer ganhar dinheiro fazendo bicos?" + botão **"Quero fazer bicos"**) e o mesmo botão "Quero fazer bicos" no Perfil, levando a 3 telas: o que você faz (categorias), região que atende, preço inicial. [Kazuo, a partir de proposta]
 - **Navegar não exige login**; login aparece ao conversar, publicar ou contratar. [Kazuo]
 - Envio de email: [Claude] `nodemailer` com SMTP configurável no `.env`; sem SMTP configurado (desenvolvimento), o código é impresso no terminal do servidor.
-- Limites anti-spam: [Claude] 1 conta por email, 1 por CPF, 1 por telefone; rate limit no cadastro e no envio de código; código expira em 10 min, máx. 5 tentativas.
+- Limites anti-spam: [Claude] 1 conta por email e 1 por telefone; rate limit no cadastro e no envio de código; código expira em 10 min, máx. 5 tentativas.
 
 ## 8. Telas e caminhos
 
@@ -108,7 +110,7 @@ Menu inferior — **modo cliente:** Início · Pedidos · Conversas · Perfil. *
 
 Kazuo decidiu que eu (Claude) crio essas partes agora. [Kazuo] Modelo de dados — formatos são minha proposta [Claude]:
 
-- **User** (+ campos): `cpfHash` (único, para impedir conta duplicada), `cpfCriptografado` (AES-GCM, chave no `.env`), `fotoUrl`, `telefone` único, `modoAtual`.
+- **User** (+ campos): `telefone` único, `modoAtual`; a foto usa o campo `image` que já existe.
 - **PerfilPrestador**: `userId`, `bio`, `categorias[]`, `bairro`, `latitude/longitude`, `raioKm`, `precoBase`, `disponivel` (bool), `ultimoSinal`.
 - **CodigoVerificacao**: `userId`, `codigoHash`, `expiraEm`, `tentativas`.
 - **Pedido** (feito pelo cliente): `clienteId`, `titulo`, `descricao`, `categoria`, `urgente`, `fotoUrl?`, `bairro`, `lat/lng`, `dataInicio`, `dataFim`, `horaInicio`, `horaFim`, `flexivel` (qualquer dia), `status` (ABERTO/FECHADO/CANCELADO).
@@ -160,7 +162,6 @@ Rotas novas (todas com sessão, validação com `zod` e rate limit): cadastro em
 - Toda rota nova confere sessão **e** dono do recurso no servidor; o front nunca manda "quem eu sou" como fonte de verdade.
 - Validação com `zod` no front (mensagens amigáveis) e no back (a que vale).
 - Upload: só JPG/PNG/WEBP, até 5 MB, conferindo o conteúdo real do arquivo; a imagem é regravada com `sharp`, o que **remove dados de GPS da foto**; salva fora de `public/`, servida por rota.
-- CPF: nunca volta inteiro para o front (só `***.***.***-12`).
 - Cabeçalhos de segurança (CSP, `X-Frame-Options`, `Referrer-Policy`, etc.) em `next.config`.
 - React escapa texto por padrão; proibido `dangerouslySetInnerHTML` com conteúdo de usuário.
 - Socket autenticado (§9). Rate limit (Redis existente) em cadastro, código, mensagens, pedidos e uploads.
