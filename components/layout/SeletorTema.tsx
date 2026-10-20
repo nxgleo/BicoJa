@@ -34,7 +34,7 @@ export function SeletorTema() {
             role="radio"
             aria-checked={marcado}
             onClick={() => escolher(valor)}
-            className={`flex min-h-12 flex-col items-center justify-center gap-1 rounded-2xl border-2 px-2 py-3 text-sm font-bold transition-colors duration-200 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-marca ${
+            className={`flex min-h-12 flex-col items-center justify-center gap-1 rounded-2xl border-2 px-2 py-3 text-sm font-bold transition-colors duration-200 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-foco ${
               marcado ? "border-marca bg-marca-suave text-marca-texto" : "border-borda bg-superficie text-texto"
             }`}
           >

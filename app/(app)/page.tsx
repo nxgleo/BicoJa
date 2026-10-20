@@ -27,7 +27,7 @@ export default async function Inicio() {
   return (
     <div className="flex flex-col gap-6">
       <Aparecer>
-        <p className="font-semibold text-texto-suave">{primeiroNome ? `Olá, ${primeiroNome}!` : "Olá!"}</p>
+        <p className="font-semibold break-words text-texto-suave">{primeiroNome ? `Olá, ${primeiroNome}!` : "Olá!"}</p>
         <h1 className="mt-1 mb-4 text-[1.6rem] leading-tight font-black">O que você precisa resolver hoje?</h1>
         <div className="flex flex-col gap-3">
           <BuscaPrincipal />

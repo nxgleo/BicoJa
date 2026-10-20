@@ -42,7 +42,7 @@ export function Botao({
   const classes = [
     "inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl font-extrabold",
     "transition-all duration-200 active:scale-[0.98] disabled:opacity-60 disabled:active:scale-100",
-    "focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-marca",
+    "focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-foco",
     estilosVariante[variante],
     estilosTamanho[tamanho],
     larguraTotal ? "w-full" : "",

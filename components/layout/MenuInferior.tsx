@@ -48,7 +48,7 @@ export function MenuInferior({ modo }: { modo: Modo }) {
               <Link
                 href={href}
                 aria-current={ativo ? "page" : undefined}
-                className={`flex min-h-16 flex-col items-center justify-center gap-0.5 text-sm font-bold transition-colors duration-200 focus-visible:outline-3 focus-visible:-outline-offset-4 focus-visible:outline-marca md:flex-row md:gap-2 ${
+                className={`flex min-h-16 flex-col items-center justify-center gap-0.5 text-sm font-bold transition-colors duration-200 focus-visible:outline-3 focus-visible:-outline-offset-4 focus-visible:outline-foco md:flex-row md:gap-2 ${
                   ativo ? "text-marca-texto" : "text-texto-suave hover:text-texto"
                 }`}
               >

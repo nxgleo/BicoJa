@@ -26,7 +26,7 @@ export function Campo({ rotulo, erro, ajuda, icone: Icone, id, className = "", .
           id={idCampo}
           aria-invalid={erro ? true : undefined}
           aria-describedby={descricao}
-          className={`min-h-12 w-full rounded-2xl border-2 bg-superficie-suave px-4 py-3 text-base text-texto placeholder:text-texto-suave transition-colors duration-200 focus:border-marca focus:bg-superficie focus:outline-none ${
+          className={`min-h-12 w-full rounded-2xl border-2 bg-superficie-suave px-4 py-3 text-base text-texto placeholder:text-texto-suave transition-colors duration-200 focus:border-foco focus:bg-superficie focus:outline-none ${
             Icone ? "pl-12" : ""
           } ${erro ? "border-urgencia" : "border-transparent"}`}
           {...resto}

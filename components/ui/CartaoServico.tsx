@@ -29,7 +29,7 @@ export function CartaoServico({
   return (
     <Link
       href={href}
-      className="flex items-center gap-3 rounded-2xl border border-borda bg-superficie p-3 transition-all duration-200 hover:border-marca active:scale-[0.99] focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-marca"
+      className="flex items-center gap-3 rounded-2xl border border-borda bg-superficie p-3 transition-all duration-200 hover:border-marca active:scale-[0.99] focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-foco"
     >
       <Avatar nome={nomePrestador} fotoUrl={fotoUrl} online={online} />
       <div className="min-w-0 flex-1">

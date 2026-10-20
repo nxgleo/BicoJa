@@ -14,7 +14,8 @@ export type NomeToken =
   | "textoSobreMarca"
   | "urgencia"
   | "sucesso"
-  | "borda";
+  | "borda"
+  | "foco";
 
 export const tokens: { claro: Record<NomeToken, string>; escuro: Record<NomeToken, string> } = {
   claro: {
@@ -31,6 +32,7 @@ export const tokens: { claro: Record<NomeToken, string>; escuro: Record<NomeToke
     urgencia: "#DC2626",
     sucesso: "#16A34A",
     borda: "#E5E7EB",
+    foco: "#B45309",
   },
   escuro: {
     fundo: "#14181C",
@@ -46,6 +48,7 @@ export const tokens: { claro: Record<NomeToken, string>; escuro: Record<NomeToke
     urgencia: "#DC2626",
     sucesso: "#22C55E",
     borda: "#2E363F",
+    foco: "#FFA552",
   },
 };
 

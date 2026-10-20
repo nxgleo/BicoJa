@@ -59,7 +59,7 @@ export default async function Buscar({ searchParams }: Props) {
       {(categoria || !normalizar(texto)) && <ListaCategorias ativa={categoria} />}
 
       <section aria-labelledby="titulo-resultados" className="flex flex-col gap-3">
-        <h1 id="titulo-resultados" className="text-2xl font-black">
+        <h1 id="titulo-resultados" className="text-2xl font-black break-words">
           {titulo}
         </h1>
         {erro ? (

@@ -23,6 +23,7 @@ describe("tokens de cor", () => {
       test("branco no botão de urgência", () => expect(razaoContraste("#FFFFFF", t.urgencia)).toBeGreaterThanOrEqual(4.5));
       test("texto no bloco laranja-claro", () => expect(razaoContraste(t.texto, t.marcaSuave)).toBeGreaterThanOrEqual(4.5));
       test("texto da marca no bloco laranja-claro", () => expect(razaoContraste(t.marcaTexto, t.marcaSuave)).toBeGreaterThanOrEqual(4.5));
+      test("contorno de foco visível (3:1)", () => expect(razaoContraste(t.foco, t.fundo)).toBeGreaterThanOrEqual(3));
       test("texto no botão principal", () => expect(razaoContraste(t.textoSobreMarca, t.botao)).toBeGreaterThanOrEqual(4.5));
     });
   }

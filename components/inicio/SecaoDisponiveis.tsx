@@ -14,7 +14,7 @@ export function SecaoDisponiveis({ servicos, erro = false }: Props) {
           Disponíveis agora
         </h2>
         {!erro && servicos.length > 0 && (
-          <Link href="/buscar" className="rounded-lg px-1 font-extrabold text-marca-texto hover:underline focus-visible:outline-3 focus-visible:outline-marca">
+          <Link href="/buscar" className="rounded-lg px-1 font-extrabold text-marca-texto hover:underline focus-visible:outline-3 focus-visible:outline-foco">
             Ver todos
           </Link>
         )}
@@ -26,7 +26,7 @@ export function SecaoDisponiveis({ servicos, erro = false }: Props) {
           <p className="font-extrabold">Não conseguimos carregar agora.</p>
           <Link
             href="/"
-            className="inline-flex min-h-12 items-center gap-2 rounded-2xl bg-superficie px-5 font-extrabold text-texto shadow-sm focus-visible:outline-3 focus-visible:outline-marca"
+            className="inline-flex min-h-12 items-center gap-2 rounded-2xl bg-superficie px-5 font-extrabold text-texto shadow-sm focus-visible:outline-3 focus-visible:outline-foco"
           >
             <RefreshCw aria-hidden className="size-5" />
             Tentar de novo
