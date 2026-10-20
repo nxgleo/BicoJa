@@ -11,6 +11,8 @@ import { BotaoSair } from "@/components/perfil/BotaoSair";
 import { EditarDados } from "@/components/perfil/EditarDados";
 import { TrocarModo } from "@/components/perfil/TrocarModo";
 import { CATEGORIAS } from "@/lib/categorias";
+import { enderecoDoUsuario } from "@/lib/enderecos";
+import { MeuEndereco } from "@/components/endereco/MeuEndereco";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +29,7 @@ export default async function Perfil() {
   if (!user) redirect("/entrar");
 
   const prestador = user.perfilPrestador;
+  const endereco = await enderecoDoUsuario(prisma, sessao.user.id);
   const nomesCategorias = prestador?.categorias
     .map((id) => CATEGORIAS.find((c) => c.id === id)?.nome)
     .filter(Boolean)
@@ -59,6 +62,8 @@ export default async function Perfil() {
       )}
 
       <EditarDados nome={user.nome ?? ""} email={user.email ?? ""} telefone={user.telefone ?? ""} foto={user.image} />
+
+      <MeuEndereco inicial={endereco} />
 
       <section aria-labelledby="titulo-aparencia" className="flex flex-col gap-3">
         <h2 id="titulo-aparencia" className="text-lg font-black">Aparência</h2>

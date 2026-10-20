@@ -95,3 +95,16 @@ export function primeiroErro(erro: z.ZodError): { campo?: string; erro: string }
   const issue = erro.issues[0];
   return { campo: issue?.path[0]?.toString(), erro: issue?.message ?? "Confira os dados." };
 }
+
+export const esquemaEndereco = z.object({
+  rua: z.string().trim().min(2, "Escreva o nome da rua.").max(100),
+  numero: z.string().trim().min(1, "Escreva o número (ou S/N).").max(10),
+  complemento: z
+    .string()
+    .trim()
+    .max(60)
+    .optional()
+    .transform((v) => v || undefined),
+  bairro: z.string().trim().min(2, "Escreva seu bairro.").max(60),
+  cidade: z.string().trim().min(2, "Escreva sua cidade.").max(60),
+});
