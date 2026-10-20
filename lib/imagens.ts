@@ -11,7 +11,8 @@ const PASTAS: PastaImagem[] = ["fotos", "pedidos", "anuncios"];
 
 export const TAMANHO_MAXIMO_IMAGEM = 5 * 1024 * 1024;
 const FORMATOS_ACEITOS = new Set(["jpeg", "png", "webp"]);
-const NOME_VALIDO = /^[0-9a-f-]{36}\.webp$/;
+// "<id do dono>_<id da foto>.webp" (fotos antigas de perfil: só "<id da foto>.webp")
+const NOME_VALIDO = /^([0-9a-f-]{36}_)?[0-9a-f-]{36}\.webp$/;
 const PASTA_RAIZ = path.join(process.cwd(), "uploads");
 const PREFIXO_URL = "/api/arquivos/";
 
@@ -45,9 +46,10 @@ export function caminhoDaImagem(pasta: string, nome: string): string | null {
   return path.join(PASTA_RAIZ, pasta, nome);
 }
 
-export async function salvarImagem(pasta: PastaImagem, webp: Buffer): Promise<string> {
+/** Salva a imagem com o id de quem enviou no nome, para ninguém usar (ou apagar) a foto de outra pessoa. */
+export async function salvarImagem(pasta: PastaImagem, webp: Buffer, donoId?: string): Promise<string> {
   await mkdir(path.join(PASTA_RAIZ, pasta), { recursive: true });
-  const nome = `${randomUUID()}.webp`;
+  const nome = donoId ? `${donoId}_${randomUUID()}.webp` : `${randomUUID()}.webp`;
   await writeFile(path.join(PASTA_RAIZ, pasta, nome), webp);
   return `${PREFIXO_URL}${pasta}/${nome}`;
 }
@@ -59,16 +61,18 @@ function partesDaUrl(url: string): { pasta: string; nome: string } | null {
   return { pasta, nome };
 }
 
-/** A URL é de uma imagem nossa, dessa pasta, e o arquivo existe? */
-export function urlDeImagemValida(url: string, pasta: PastaImagem): boolean {
+/** A URL é de uma imagem nossa, dessa pasta, enviada por essa pessoa, e o arquivo existe? */
+export function urlDeImagemValida(url: string, pasta: PastaImagem, donoId: string): boolean {
   const partes = partesDaUrl(url);
-  if (!partes || partes.pasta !== pasta) return false;
+  if (!partes || partes.pasta !== pasta || !partes.nome.startsWith(`${donoId}_`)) return false;
   const caminho = caminhoDaImagem(partes.pasta, partes.nome);
   return Boolean(caminho && existsSync(caminho));
 }
 
-export async function apagarImagem(url: string): Promise<void> {
+/** Apaga a imagem; com donoId, só se ela for dessa pessoa. */
+export async function apagarImagem(url: string, donoId?: string): Promise<void> {
   const partes = partesDaUrl(url);
+  if (donoId && !partes?.nome.startsWith(`${donoId}_`)) return;
   const caminho = partes && caminhoDaImagem(partes.pasta, partes.nome);
   if (caminho) await unlink(caminho).catch(() => {});
 }

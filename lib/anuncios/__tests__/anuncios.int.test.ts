@@ -1,5 +1,8 @@
 import { afterAll, beforeEach, describe, expect, test } from "vitest";
+import { existsSync } from "node:fs";
+import sharp from "sharp";
 import { prisma } from "@/lib/prisma";
+import { caminhoDaImagem, salvarImagem } from "@/lib/imagens";
 import { anuncioPublico, criarAnuncio, editarAnuncio, meusAnuncios } from "@/lib/anuncios/anuncios";
 
 let prestadorId: string;
@@ -74,5 +77,19 @@ describe("editar, pausar e página pública", () => {
     if (!r.ok) throw new Error("falhou");
     await editarAnuncio(prisma, r.id, prestadorId, { ...anuncio, titulo: "Torneiras e descargas" });
     expect((await anuncioPublico(prisma, r.id))?.titulo).toBe("Torneiras e descargas");
+  });
+});
+
+describe("fotos de outra pessoa", () => {
+  test("não dá para usar (nem apagar) a foto do anúncio de outro prestador", async () => {
+    const outro = (await prisma.user.create({ data: { nome: "Beto", email: "beto@teste.test" } })).id;
+    const webp = await sharp({ create: { width: 10, height: 10, channels: 3, background: "#fff" } }).webp().toBuffer();
+    const fotoDoOutro = await salvarImagem("anuncios", webp, outro);
+    const r = await criarAnuncio(prisma, prestadorId, { ...anuncio, fotos: [fotoDoOutro] });
+    expect(r).toMatchObject({ ok: false, campo: "fotos" });
+    expect(existsSync(caminhoDaImagem("anuncios", fotoDoOutro.split("/").pop()!)!)).toBe(true);
+
+    const minha = await salvarImagem("anuncios", webp, prestadorId);
+    expect((await criarAnuncio(prisma, prestadorId, { ...anuncio, fotos: [minha] })).ok).toBe(true);
   });
 });

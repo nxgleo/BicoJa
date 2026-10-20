@@ -3,7 +3,7 @@
 // nunca rua, número, complemento, coordenadas, email ou telefone.
 import { Prisma, type PrismaClient } from "@prisma/client";
 import { urlDeImagemValida } from "@/lib/imagens";
-import { distanciaKm } from "@/lib/distancia";
+import { distanciaAproximada, distanciaKm } from "@/lib/distancia";
 import type { DadosPedido } from "./esquemas";
 
 const JANELA_URGENTE_MS = 3 * 3600_000;
@@ -47,7 +47,7 @@ export async function criarPedido(
   const endereco = await prisma.enderecoUsuario.findUnique({ where: { userId: clienteId } });
   if (!endereco) return { ok: false, campo: "endereco", erro: "Salve seu endereço primeiro." };
 
-  if (dados.fotos.some((url) => !urlDeImagemValida(url, "pedidos"))) {
+  if (dados.fotos.some((url) => !urlDeImagemValida(url, "pedidos", clienteId))) {
     return { ok: false, campo: "fotos", erro: "Uma das fotos não foi enviada direito. Tire e mande de novo." };
   }
 
@@ -118,7 +118,7 @@ export async function pedidosParaPrestador(
 
   return linhas.map(({ clienteNome, clienteFoto, ...resto }) => ({
     ...resto,
-    distanciaKm: Number(resto.distanciaKm),
+    distanciaKm: distanciaAproximada(Number(resto.distanciaKm)),
     cliente: { nome: primeiroNome(clienteNome), foto: clienteFoto },
   }));
 }
@@ -178,7 +178,7 @@ export async function detalhePedido(
       horaFim: p.horaFim,
       bairro: p.bairro,
       cidade: p.cidade,
-      distanciaKm: referencia ? distanciaKm(referencia, p) : null,
+      distanciaKm: referencia ? distanciaAproximada(distanciaKm(referencia, p)) : null,
       createdAt: p.createdAt,
       cliente: { nome: primeiroNome(p.cliente.nome), foto: p.cliente.image },
     },

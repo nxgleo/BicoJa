@@ -1,7 +1,9 @@
+// Simula um servidor em UTC (o comum na hospedagem): "hoje" tem que ser o de Belém mesmo assim
+process.env.TZ = "UTC";
 import { describe, expect, test } from "vitest";
 import { criarEsquemaPedido } from "@/lib/pedidos/esquemas";
 
-const hoje = new Date(2026, 9, 20); // 20/10/2026
+const hoje = new Date("2026-10-20T15:00:00Z"); // 20/10/2026, meio-dia em Belém
 const esquema = criarEsquemaPedido(hoje);
 const base = { categoria: "encanamento", descricao: "A pia da cozinha está vazando", fotos: [], urgente: false };
 
@@ -57,5 +59,13 @@ describe("pedido", () => {
   test("urgente vira 'qualquer dia' sozinho", () => {
     const r = esquema.safeParse({ ...base, urgente: true, quando: { tipo: "DIA_CERTO", dataInicio: "2026-11-01" } });
     expect(r.success && r.data.quando).toEqual({ tipo: "QUALQUER_DIA" });
+  });
+});
+
+describe("fuso horário", () => {
+  test("às 22h de Belém (já 21/10 em UTC) ainda dá para pedir para hoje", () => {
+    const noite = criarEsquemaPedido(new Date("2026-10-21T01:00:00Z"));
+    const r = noite.safeParse({ ...base, quando: { tipo: "DIA_CERTO", dataInicio: "2026-10-20" } });
+    expect(r.success).toBe(true);
   });
 });

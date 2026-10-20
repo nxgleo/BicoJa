@@ -20,7 +20,7 @@ async function validar(prisma: PrismaClient, prestadorId: string, dados: DadosAn
       },
     };
   }
-  if (dados.fotos.some((url) => !urlDeImagemValida(url, "anuncios"))) {
+  if (dados.fotos.some((url) => !urlDeImagemValida(url, "anuncios", prestadorId))) {
     return { erro: { ok: false as const, campo: "fotos", erro: ERRO_FOTOS } };
   }
   return { perfil };
@@ -81,7 +81,7 @@ export async function editarAnuncio(
     },
   });
   // Fotos que saíram do anúncio são apagadas do disco
-  await Promise.all(atual.fotos.filter((f) => !completo.fotos.includes(f)).map(apagarImagem));
+  await Promise.all(atual.fotos.filter((f) => !completo.fotos.includes(f)).map((f) => apagarImagem(f, prestadorId)));
   return { ok: true, id };
 }
 

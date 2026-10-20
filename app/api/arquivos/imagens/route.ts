@@ -26,5 +26,5 @@ export async function POST(req: Request) {
 
   const r = await processarImagem(Buffer.from(await arquivo.arrayBuffer()), "galeria");
   if (!r.ok) return responderErro(400, r.erro, "imagem");
-  return NextResponse.json({ ok: true, url: await salvarImagem(pasta, r.webp) });
+  return NextResponse.json({ ok: true, url: await salvarImagem(pasta, r.webp, userId) });
 }

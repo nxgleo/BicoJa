@@ -55,7 +55,7 @@ describe("criarPedido", () => {
 
   test("foto enviada de verdade é aceita", async () => {
     const webp = await sharp({ create: { width: 10, height: 10, channels: 3, background: "#fff" } }).webp().toBuffer();
-    const url = await salvarImagem("pedidos", webp);
+    const url = await salvarImagem("pedidos", webp, clienteId);
     expect((await criarPedido(prisma, clienteId, pedido({ fotos: [url] }))).ok).toBe(true);
   });
 });
@@ -86,6 +86,14 @@ describe("pedidosParaPrestador", () => {
     const normais = await pedidosParaPrestador(prisma, prestadorId, "pedidos", depois);
     expect(normais).toHaveLength(1);
     expect(normais[0].urgente).toBe(false);
+  });
+
+  test("distância vai arredondada de meio em meio km (não dá para achar a casa por triangulação)", async () => {
+    await criarPedido(prisma, clienteId, pedido());
+    const [item] = await pedidosParaPrestador(prisma, prestadorId, "pedidos");
+    expect((item.distanciaKm! * 2) % 1).toBe(0);
+    const r = await detalhePedido(prisma, item.id, { userId: prestadorId });
+    expect(r && !r.doDono && (r.pedido.distanciaKm! * 2) % 1).toBe(0);
   });
 
   test("nunca mostra rua, número, complemento ou coordenadas do cliente", async () => {

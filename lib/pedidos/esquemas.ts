@@ -13,8 +13,11 @@ function diaDe(texto: string): number {
   return Date.UTC(a, m - 1, d) / 86_400_000;
 }
 
+// "Hoje" sempre no horário do Brasil, não no do servidor (que costuma estar em UTC)
+const DIA_NO_BRASIL = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" });
+
 function diaDeHoje(hoje: Date): number {
-  return Date.UTC(hoje.getFullYear(), hoje.getMonth(), hoje.getDate()) / 86_400_000;
+  return diaDe(DIA_NO_BRASIL.format(hoje)); // "2026-10-20"
 }
 
 const esquemaQuando = z.object({
