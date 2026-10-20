@@ -35,11 +35,12 @@ const ContextoChat = createContext<Contexto>({
 
 export const useChat = () => useContext(ContextoChat);
 
-const CHAVE_ULTIMA = "bicoja-ultima-conversa";
+// Guardada por pessoa: se outra conta entrar no mesmo celular, não vê a conversa da anterior
+const chaveUltima = (userId: string) => `bicoja-ultima-conversa:${userId}`;
 
-function lerUltima(): ConversaAtiva | null {
+function lerUltima(userId: string): ConversaAtiva | null {
   try {
-    const v = JSON.parse(sessionStorage.getItem(CHAVE_ULTIMA) ?? "null");
+    const v = JSON.parse(sessionStorage.getItem(chaveUltima(userId)) ?? "null");
     return v && typeof v.id === "string" && typeof v.nome === "string" ? v : null;
   } catch {
     return null;
@@ -47,7 +48,8 @@ function lerUltima(): ConversaAtiva | null {
 }
 
 /** Liga o chat em tempo real para quem está logado: não lidas no menu e a bolha flutuante. */
-export function ProvedorChat({ logado, children }: { logado: boolean; children: ReactNode }) {
+export function ProvedorChat({ userId, children }: { userId: string | null; children: ReactNode }) {
+  const logado = Boolean(userId);
   const [socket, setSocket] = useState<Socket | null>(null);
   const [naoLidas, setNaoLidas] = useState(0);
   const [avisosNaoLidos, setAvisosNaoLidos] = useState(0);
@@ -76,7 +78,7 @@ export function ProvedorChat({ logado, children }: { logado: boolean; children: 
 
   useEffect(() => {
     if (!logado) return;
-    setUltima(lerUltima());
+    setUltima(userId ? lerUltima(userId) : null);
     const s = conectarChat();
     setSocket(s);
     recarregarNaoLidas();
@@ -99,7 +101,7 @@ export function ProvedorChat({ logado, children }: { logado: boolean; children: 
       s.off("aviso:novo", recarregarAvisos);
       s.off("connect", aoConectar);
     };
-  }, [logado, recarregarNaoLidas, recarregarAvisos]);
+  }, [logado, userId, recarregarNaoLidas, recarregarAvisos]);
 
   const definirAberta = useCallback(
     (c: ConversaAtiva | null) => {
@@ -108,13 +110,13 @@ export function ProvedorChat({ logado, children }: { logado: boolean; children: 
       setUltima(c);
       setBolhaDispensada(false);
       try {
-        sessionStorage.setItem(CHAVE_ULTIMA, JSON.stringify(c));
+        if (userId) sessionStorage.setItem(chaveUltima(userId), JSON.stringify(c));
       } catch {
         // navegador sem armazenamento: a bolha só não lembra depois de recarregar
       }
       recarregarNaoLidas();
     },
-    [recarregarNaoLidas]
+    [userId, recarregarNaoLidas]
   );
 
   return (

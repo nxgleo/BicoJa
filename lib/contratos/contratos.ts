@@ -57,9 +57,11 @@ async function contratoDe(prisma: PrismaClient, id: string, userId: string) {
 }
 
 /** Escreve um aviso do sistema no chat do serviço e devolve para avisar em tempo real. */
-async function avisoNoChat(tx: Prisma.TransactionClient, c: Contrato, texto: string, agora: Date) {
+async function avisoNoChat(tx: Prisma.TransactionClient, c: Contrato, texto: string, agora: Date, quemFez?: string) {
   const m = await tx.mensagem.create({ data: { conversaId: c.conversaId, tipo: "SISTEMA", texto, createdAt: agora } });
-  await tx.conversa.update({ where: { id: c.conversaId }, data: { ultimaMensagemEm: agora } });
+  // Quem fez a ação já sabe dela: não conta como mensagem nova para essa pessoa
+  const lida = quemFez === c.clienteId ? { lidaClienteEm: agora } : quemFez === c.prestadorId ? { lidaPrestadorEm: agora } : {};
+  await tx.conversa.update({ where: { id: c.conversaId }, data: { ultimaMensagemEm: agora, ...lida } });
   return { conversaId: c.conversaId, mensagens: [paraMensagemChat(m)], avisar: [c.clienteId, c.prestadorId] };
 }
 
@@ -110,7 +112,7 @@ export async function escolherPagamento(
     const texto = peloApp
       ? `${nome} pagou ${formatarPreco(c.valor)} pelo app. O valor fica guardado e é liberado quando o serviço terminar.`
       : `${nome} vai pagar ${formatarPreco(c.valor)} direto para ${primeiroNome(c.prestador.nome)}.`;
-    const chat = await avisoNoChat(tx, c, texto, agora);
+    const chat = await avisoNoChat(tx, c, texto, agora, userId);
     await criarAviso(tx, c.prestadorId, texto, linkDo(c));
     return chat;
   });
@@ -164,7 +166,7 @@ export async function concluirComCodigo(
     });
     if (r.count === 0) return null;
     const texto = "Serviço concluído ✔ Agora vocês podem avaliar um ao outro.";
-    const m = await avisoNoChat(tx, c, texto, agora);
+    const m = await avisoNoChat(tx, c, texto, agora, userId);
     await criarAviso(tx, c.clienteId, `Serviço com ${primeiroNome(c.prestador.nome)} concluído. Conte como foi!`, linkDo(c));
     await criarAviso(tx, c.prestadorId, `Serviço com ${primeiroNome(c.cliente.nome)} concluído. Avalie o cliente.`, linkDo(c));
     return m;
@@ -219,7 +221,7 @@ export async function cancelarContrato(
     if (c.pedidoId) await tx.pedido.updateMany({ where: { id: c.pedidoId, status: "FECHADO" }, data: { status: "ABERTO" } });
     const devolve = c.statusPagamento === "RETIDO" ? ` O valor de ${formatarPreco(c.valor)} volta para ${primeiroNome(c.cliente.nome)}.` : "";
     const texto = `${quem} cancelou o serviço. Motivo: ${textoMotivo}.${devolve}`;
-    const m = await avisoNoChat(tx, c, texto, agora);
+    const m = await avisoNoChat(tx, c, texto, agora, userId);
     await criarAviso(tx, outroId, texto, linkDo(c));
     return m;
   });

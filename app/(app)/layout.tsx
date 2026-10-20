@@ -21,7 +21,7 @@ export default async function LayoutApp({
   );
 
   return (
-    <ProvedorChat logado={podeConversar}>
+    <ProvedorChat userId={podeConversar ? sessao!.user.id : null}>
       <div className="flex min-h-screen flex-col md:flex-col-reverse md:justify-end">
         <PularParaConteudo />
         <div className="flex flex-1 flex-col">

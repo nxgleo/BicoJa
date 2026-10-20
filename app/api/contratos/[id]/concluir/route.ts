@@ -16,8 +16,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     const e = primeiroErro(validado.error);
     return responderErro(400, e.erro, e.campo);
   }
-  // Além das 5 tentativas por serviço, um limite por pessoa (evita tentar em vários serviços)
-  if (!(await limitar(`concluir:${userId}`, 20, 3600))) return responderErro(429, ERRO_LIMITE, "codigo");
+  // Além das 5 tentativas a cada 15 min por serviço, no máximo 30 por dia por pessoa (adivinhar 4 números fica inviável)
+  if (!(await limitar(`concluir:${userId}`, 30, 86400))) return responderErro(429, ERRO_LIMITE, "codigo");
 
   const { id } = await params;
   const r = await concluirComCodigo(prisma, id, userId, validado.data.codigo);
