@@ -18,7 +18,7 @@ function urlBase64ToUint8Array(base64String: string) {
   return outputArray;
 }
 
-export function PushNotificationButton() {
+export function BotaoNotificacoes() {
   const { data: session, status: sessionStatus } = useSession();
   const userId = (session?.user as { id?: string } | undefined)?.id;
   const [pushStatus, setPushStatus] = useState<PushStatus>("checking");
