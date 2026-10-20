@@ -4,7 +4,7 @@ self.addEventListener("push", (event) => {
   const data = event.data.json();
   const options = {
     body: data.body || "Você tem uma nova atualização no BicoJá.",
-    icon: "/favicon.ico",
+    icon: "/icones/icone-192.png",
     data: {
       url: data.url || "/",
     },

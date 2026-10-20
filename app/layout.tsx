@@ -3,6 +3,7 @@ import { Nunito } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 import { ScriptTema } from "@/components/layout/ScriptTema";
+import { RegistrarServiceWorker } from "@/components/pwa/RegistrarServiceWorker";
 
 const nunito = Nunito({
   variable: "--font-nunito",
@@ -13,6 +14,8 @@ const nunito = Nunito({
 export const metadata: Metadata = {
   title: "BicoJá",
   description: "Encontre quem resolve seu problema perto de você, ou ganhe dinheiro fazendo bicos.",
+  icons: { apple: "/icones/apple-touch-icon.png" },
+  appleWebApp: { capable: true, title: "BicoJá", statusBarStyle: "default" },
 };
 
 export const viewport: Viewport = {
@@ -36,6 +39,7 @@ export default function RootLayout({
       </head>
       <body className={`${nunito.variable} min-h-screen bg-fundo text-texto antialiased`}>
         <Providers>{children}</Providers>
+        <RegistrarServiceWorker />
       </body>
     </html>
   );
