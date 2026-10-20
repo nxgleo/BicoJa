@@ -23,7 +23,7 @@ function juntar(atuais: MensagemChat[], novas: MensagemChat[]): MensagemChat[] {
 }
 
 export function TelaChat({ inicial, eu }: Props) {
-  const { socket, definirAberta } = useChat();
+  const { socket, definirAberta, recarregarNaoLidas } = useChat();
   const [conversa, setConversa] = useState(inicial);
   const [mensagens, setMensagens] = useState(inicial.mensagens);
   const [temMais, setTemMais] = useState(inicial.temMais);
@@ -56,9 +56,12 @@ export function TelaChat({ inicial, eu }: Props) {
   const marcarLida = useCallback(() => {
     if (marcarDepois.current) clearTimeout(marcarDepois.current);
     marcarDepois.current = setTimeout(() => {
-      if (document.visibilityState === "visible") fetch(`/api/conversas/${id}/lida`, { method: "POST" }).catch(() => {});
+      if (document.visibilityState !== "visible") return;
+      fetch(`/api/conversas/${id}/lida`, { method: "POST" })
+        .then(recarregarNaoLidas)
+        .catch(() => {});
     }, 400);
-  }, [id]);
+  }, [id, recarregarNaoLidas]);
 
   // Avisa a bolha/menu que esta conversa está aberta e marca como lida
   useEffect(() => {
