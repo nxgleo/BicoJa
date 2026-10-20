@@ -8,6 +8,7 @@ import { useChat } from "@/components/chat/ProvedorChat";
 import { CartaoProposta } from "@/components/chat/CartaoProposta";
 import { FormProposta } from "@/components/chat/FormProposta";
 import { MenuConversa } from "@/components/chat/MenuConversa";
+import { NotaEstrelas } from "@/components/contratos/Estrelas";
 import { enviarJson } from "@/lib/cliente/api";
 import { formatarTelefone } from "@/lib/contas/telefone";
 import { horaCurta, rotuloDoDia } from "@/lib/chat/formatar";
@@ -87,7 +88,7 @@ export function TelaChat({ inicial, eu }: Props) {
         marcarLida();
       }
       // "Combinado": busca o contato que acabou de liberar
-      if (d.mensagens.some((m) => m.proposta?.status === "ACEITA")) recarregar();
+      if (d.mensagens.some((m) => m.proposta?.status === "ACEITA" || m.tipo === "SISTEMA")) recarregar();
     };
     const aoLer = (d: { conversaId: string; em: string }) => {
       if (d.conversaId === id) setConversa((c) => ({ ...c, lidaPeloOutroEm: d.em }));
@@ -222,6 +223,7 @@ export function TelaChat({ inicial, eu }: Props) {
         <Avatar nome={outro.nome} fotoUrl={outro.foto} tamanho={56} />
         <div className="min-w-0">
           <h1 className="text-xl leading-tight font-black break-words">{outro.nome}</h1>
+          <NotaEstrelas media={outro.nota.media} total={outro.nota.total} pequena />
           {conversa.perfilDoOutro && (
             <Link href={conversa.perfilDoOutro} className="font-bold text-marca-texto underline-offset-4 hover:underline">
               Ver perfil
@@ -254,6 +256,11 @@ export function TelaChat({ inicial, eu }: Props) {
             </a>
           )}
           {conversa.contato.email && <p className="font-bold break-words">Email: {conversa.contato.email}</p>}
+          {conversa.contratoId && (
+            <Botao href={`/contratos/${conversa.contratoId}`} larguraTotal>
+              Ver serviço combinado (pagar, código)
+            </Botao>
+          )}
           {conversa.contato.endereco && (
             <p className="flex gap-2 font-bold">
               <MapPin aria-hidden className="mt-0.5 size-5 shrink-0" /> {conversa.contato.endereco}

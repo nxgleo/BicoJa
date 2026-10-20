@@ -78,6 +78,11 @@ model User {
   bloqueiosRecebidos     Bloqueio[] @relation("BloqueioAlvo")
   denunciasFeitas        Denuncia[] @relation("DenunciaAutor")
   denunciasRecebidas     Denuncia[] @relation("DenunciaAlvo")
+
+  // Fase 5
+  avaliacoesFeitas    Avaliacao[] @relation("AvaliacaoAutor")
+  avaliacoesRecebidas Avaliacao[] @relation("AvaliacaoAlvo")
+  avisos              Aviso[]
 }
 
 model Account {
@@ -273,6 +278,20 @@ enum StatusContrato {
   CANCELADO
 }
 
+enum MetodoPagamento {
+  PIX
+  CARTAO
+  DIRETO
+}
+
+enum StatusPagamento {
+  PENDENTE
+  RETIDO
+  LIBERADO
+  ESTORNADO
+  DIRETO
+}
+
 // Uma conversa por dupla: quem contrata (cliente) e quem trabalha (prestador).
 // servicoId/pedidoId guardam de onde veio a conversa mais recente.
 model Conversa {
@@ -341,10 +360,33 @@ model Contrato {
   status      StatusContrato @default(COMBINADO)
   createdAt   DateTime       @default(now())
 
+  // Pagamento (simulado por enquanto) — Fase 5
+  metodoPagamento    MetodoPagamento?
+  statusPagamento    StatusPagamento  @default(PENDENTE)
+  taxaPercentual     Float            @default(0)
+  taxaValor          Float            @default(0)
+  pagoEm             DateTime?
+  liberadoEm         DateTime?
+  // Código de conclusão: guardado cifrado para o cliente poder ver de novo
+  codigoCifrado      String?
+  tentativasCodigo   Int              @default(0)
+  codigoBloqueadoAte DateTime?
+  concluidoEm        DateTime?
+  canceladoEm        DateTime?
+  canceladoPorId     String?
+  motivoCancelamento String?
+  // Avisos de prazo já mandados (3 dias e 6 dias depois da data combinada)
+  avisoTresDias      Boolean          @default(false)
+  avisoSeisDias      Boolean          @default(false)
+
+  avaliacoes Avaliacao[]
+
   conversa  Conversa @relation(fields: [conversaId], references: [id], onDelete: Cascade)
   proposta  Mensagem @relation(fields: [propostaId], references: [id], onDelete: Cascade)
   cliente   User     @relation("ContratoCliente", fields: [clienteId], references: [id], onDelete: Cascade)
   prestador User     @relation("ContratoPrestador", fields: [prestadorId], references: [id], onDelete: Cascade)
+
+  @@index([status])
 }
 
 model Bloqueio {
@@ -371,4 +413,37 @@ model Denuncia {
 
   autor      User @relation("DenunciaAutor", fields: [autorId], references: [id], onDelete: Cascade)
   denunciado User @relation("DenunciaAlvo", fields: [denunciadoId], references: [id], onDelete: Cascade)
+}
+
+// ---------- Contrato, avaliação e avisos (Fase 5) ----------
+
+model Avaliacao {
+  id         String   @id @default(uuid())
+  contratoId String
+  autorId    String
+  avaliadoId String
+  nota       Int
+  comentario String?
+  createdAt  DateTime @default(now())
+
+  contrato Contrato @relation(fields: [contratoId], references: [id], onDelete: Cascade)
+  autor    User     @relation("AvaliacaoAutor", fields: [autorId], references: [id], onDelete: Cascade)
+  avaliado User     @relation("AvaliacaoAlvo", fields: [avaliadoId], references: [id], onDelete: Cascade)
+
+  @@unique([contratoId, autorId])
+  @@index([avaliadoId])
+}
+
+// Avisos dentro do app (o sininho). Push no celular chega na Fase 6.
+model Aviso {
+  id        String   @id @default(uuid())
+  userId    String
+  texto     String
+  href      String
+  lido      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, lido])
 }

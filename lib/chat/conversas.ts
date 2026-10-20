@@ -3,6 +3,7 @@
 import { Prisma, type Mensagem, type PrismaClient } from "@prisma/client";
 import { urlDeImagemValida } from "@/lib/imagens";
 import { formatarPreco } from "@/lib/formatar";
+import { notaDe } from "@/lib/avaliacoes";
 import type { DadosMensagem, DadosProposta, OrigemConversa } from "@/lib/chat/esquemas";
 
 export type Papel = "cliente" | "prestador";
@@ -181,7 +182,7 @@ export async function abrirConversa(prisma: PrismaClient, conversaId: string, us
   const { conversa: c, papel, outroId } = p;
 
   const limite = antes ? new Date(antes) : null;
-  const [outro, lista, bloqueioMeu, bloqueioDele, contrato, servico, pedido] = await Promise.all([
+  const [outro, lista, bloqueioMeu, bloqueioDele, contrato, servico, pedido, nota] = await Promise.all([
     prisma.user.findUnique({ where: { id: outroId }, select: { id: true, nome: true, image: true, telefone: true, email: true } }),
     prisma.mensagem.findMany({
       where: { conversaId, ...(limite && !Number.isNaN(limite.getTime()) && { createdAt: { lt: limite } }) },
@@ -196,6 +197,7 @@ export async function abrirConversa(prisma: PrismaClient, conversaId: string, us
     }),
     c.servicoId ? prisma.servico.findUnique({ where: { id: c.servicoId }, select: { id: true, titulo: true } }) : null,
     c.pedidoId ? prisma.pedido.findUnique({ where: { id: c.pedidoId }, select: { id: true, descricao: true } }) : null,
+    notaDe(prisma, outroId),
   ]);
   if (!outro) return null;
 
@@ -219,7 +221,7 @@ export async function abrirConversa(prisma: PrismaClient, conversaId: string, us
   return {
     id: c.id,
     papel,
-    outro: { id: outro.id, nome: outro.nome ?? "Usuário", foto: outro.image },
+    outro: { id: outro.id, nome: outro.nome ?? "Usuário", foto: outro.image, nota },
     // Link do perfil público só quando o outro lado é o prestador
     perfilDoOutro: papel === "cliente" ? `/prestadores/${outro.id}` : null,
     origem: servico
@@ -231,6 +233,7 @@ export async function abrirConversa(prisma: PrismaClient, conversaId: string, us
     bloqueadoPorMim: Boolean(bloqueioMeu),
     podeEnviar: !bloqueioMeu && !bloqueioDele,
     contato,
+    contratoId: contrato?.id ?? null,
     mensagens: lista.slice(0, POR_PAGINA).reverse().map(paraMensagemChat),
     temMais,
   };

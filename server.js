@@ -102,5 +102,16 @@ app.prepare().then(() => {
 
   httpServer.listen(port, () => {
     console.log(`> Servidor rodando em http://${hostname}:${port}`);
+    iniciarPrazos();
   });
 });
+
+// Prazos dos serviços combinados (avisos de 3/6 dias e liberação aos 7): a cada 15 minutos
+function iniciarPrazos() {
+  const { createHash } = require("crypto");
+  const chave = createHash("sha256").update(`prazos:${process.env.NEXTAUTH_SECRET ?? ""}`).digest("hex");
+  const rodar = () =>
+    fetch(`http://${hostname}:${port}/api/interno/prazos`, { method: "POST", headers: { "x-chave-interna": chave } }).catch(() => {});
+  setTimeout(rodar, 30_000);
+  setInterval(rodar, 15 * 60_000);
+}

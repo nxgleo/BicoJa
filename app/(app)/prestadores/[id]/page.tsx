@@ -9,6 +9,8 @@ import { Avatar } from "@/components/ui";
 import { GaleriaFotos } from "@/components/publico/GaleriaFotos";
 import { BotaoConversar } from "@/components/publico/BotaoConversar";
 import { idDaSessao } from "@/lib/contas/sessao";
+import { avaliacoesRecebidas, notaDe } from "@/lib/avaliacoes";
+import { EstrelasFixas, NotaEstrelas } from "@/components/contratos/Estrelas";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +20,11 @@ export default async function PerfilDoPrestador({ params }: { params: Promise<{ 
   const { id } = await params;
   const p = await perfilPublico(prisma, id);
   if (!p) notFound();
-  const souEu = (await idDaSessao()) === p.id;
+  const [souEu, nota, avaliacoes] = await Promise.all([
+    idDaSessao().then((id) => id === p.id),
+    notaDe(prisma, p.id),
+    avaliacoesRecebidas(prisma, p.id, 5),
+  ]);
   const primeiroNome = p.nome.split(" ")[0];
 
   return (
@@ -28,6 +34,7 @@ export default async function PerfilDoPrestador({ params }: { params: Promise<{ 
         <div className="min-w-0">
           <h1 className="text-2xl leading-tight font-black break-words">{p.nome}</h1>
           <p className="text-texto-suave">{p.categorias.map(nomeDaCategoria).join(", ")}</p>
+          <NotaEstrelas media={nota.media} total={nota.total} />
           {p.disponivelAgora && <p className="font-extrabold text-sucesso">● Disponível agora</p>}
         </div>
       </header>
@@ -63,6 +70,23 @@ export default async function PerfilDoPrestador({ params }: { params: Promise<{ 
           </ul>
         )}
       </section>
+
+      {avaliacoes.length > 0 && (
+        <section aria-labelledby="titulo-avaliacoes" className="flex flex-col gap-3">
+          <h2 id="titulo-avaliacoes" className="text-xl font-black">O que dizem de {primeiroNome}</h2>
+          <ul className="flex flex-col gap-2">
+            {avaliacoes.map((a) => (
+              <li key={a.id} className="flex flex-col gap-1 rounded-2xl bg-superficie-suave p-4">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="font-extrabold">{a.autor.nome}</p>
+                  <EstrelasFixas nota={a.nota} />
+                </div>
+                {a.comentario && <p className="break-words whitespace-pre-line">{a.comentario}</p>}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {souEu ? null : <BotaoConversar origem={{ prestadorId: p.id }} texto={`Conversar com ${primeiroNome}`} />}
     </div>

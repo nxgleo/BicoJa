@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { LogIn } from "lucide-react";
+import { Sininho } from "@/components/avisos/Sininho";
 
 /** Barra do topo com o logo. Quem não entrou na conta vê o botão "Entrar". */
 export function Cabecalho({ logado = true }: { logado?: boolean }) {
@@ -15,6 +16,7 @@ export function Cabecalho({ logado = true }: { logado?: boolean }) {
           Bico<span className="text-marca-texto">Já</span>
         </span>
       </Link>
+      {logado && <Sininho />}
       {!logado && (
         <Link
           href="/entrar"

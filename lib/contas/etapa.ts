@@ -4,7 +4,7 @@
 export type Etapa = "codigo" | "foto" | "completo";
 type Token = { emailVerificado?: boolean; temFoto?: boolean } | null;
 
-const PAGINAS_COM_LOGIN = ["/perfil", "/pedidos", "/conversas", "/prestador", "/quero-fazer-bicos"];
+const PAGINAS_COM_LOGIN = ["/perfil", "/pedidos", "/conversas", "/prestador", "/quero-fazer-bicos", "/contratos", "/avisos"];
 const TELA_DA_ETAPA: Record<Exclude<Etapa, "completo">, string> = {
   codigo: "/cadastro/codigo",
   foto: "/cadastro/foto",
