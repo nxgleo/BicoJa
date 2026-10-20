@@ -174,8 +174,12 @@ Rotas novas (todas com sessão, validação com `zod` e rate limit): cadastro em
 
 ## 14. Localização (versão simples)
 
-- Pede permissão de localização do navegador com explicação; se negar ou falhar, a pessoa digita o bairro/endereço (Nominatim já existe). [Claude]
-- "Disponíveis agora" = prestadores com "Estou disponível" ligado e sinal recente, perto. [Claude]
+- **Por enquanto, endereço digitado à mão** (rua, número, complemento, bairro, cidade), geocodificado pelo Nominatim; GPS do navegador fica para depois. [Kazuo, 2026-10-20]
+- O cliente salva **"Meu endereço" no perfil** (ou no primeiro pedido); ele preenche os pedidos e calcula as distâncias. Visitante sem conta vê os prestadores da cidade sem distância. [Kazuo]
+- Prestadores só veem **bairro e distância** de um pedido; rua e número só depois de combinar. [Kazuo]
+- **"Estou disponível agora"**: o prestador liga no Início dele; **desliga sozinho em 8 horas** (a tela mostra o horário). "Disponíveis agora" = ligado e dentro do prazo, perto do cliente. [Kazuo]
+- **Pedido urgente** fica na aba "Urgentes" por **3 horas**; depois passa para a aba normal (o aviso ao cliente chega junto com as notificações, Fase 5). [Kazuo]
+- **Fotos:** pedido até 3 fotos do problema; anúncio até 5 fotos de trabalhos feitos; mesma proteção da foto de perfil (tira EXIF/GPS). [Kazuo]
 
 ## 15. Restrições
 
