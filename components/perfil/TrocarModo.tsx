@@ -35,8 +35,7 @@ export function TrocarModo({ modoAtual }: { modoAtual: Modo }) {
     }
     await update();
     setTrocando(null);
-    // A tela inicial do prestador chega na Fase 3; por enquanto fica no Perfil com o menu novo
-    if (modo === "CLIENTE") router.push("/");
+    router.push(modo === "PRESTADOR" ? "/prestador" : "/");
     router.refresh();
   }
 

@@ -85,7 +85,7 @@ export default function QueroFazerBicos() {
       return;
     }
     await update();
-    router.push("/perfil");
+    router.push("/prestador");
     router.refresh();
   }
 
