@@ -30,7 +30,7 @@ export default async function Inicio() {
   try {
     const endereco = sessao?.user?.id ? await enderecoDoUsuario(prisma, sessao.user.id) : null;
     temEndereco = Boolean(endereco);
-    prestadores = await prestadoresDisponiveis(prisma, endereco, 6);
+    prestadores = await prestadoresDisponiveis(prisma, endereco, 6, new Date(), sessao?.user?.id);
     anuncios = endereco ? await anunciosPerto(endereco, 6) : await listarServicosRecentes(6);
   } catch (e) {
     console.error("Erro ao carregar serviços da tela inicial:", e);

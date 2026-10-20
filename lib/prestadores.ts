@@ -39,10 +39,12 @@ export async function prestadoresDisponiveis(
   prisma: PrismaClient,
   perto: { latitude: number; longitude: number } | null,
   limite: number,
-  agora = new Date()
+  agora = new Date(),
+  /** Quem está vendo a tela não aparece para si mesmo */
+  excluirUserId?: string
 ): Promise<PrestadorResumo[]> {
   const perfis = await prisma.perfilPrestador.findMany({
-    where: { disponivel: true, disponivelAte: { gt: agora } },
+    where: { disponivel: true, disponivelAte: { gt: agora }, ...(excluirUserId && { userId: { not: excluirUserId } }) },
     orderBy: { disponivelAte: "desc" },
     take: 200,
     include: { user: { select: { id: true, nome: true, image: true } } },

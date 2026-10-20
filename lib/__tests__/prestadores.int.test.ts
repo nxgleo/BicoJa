@@ -43,6 +43,13 @@ describe("disponibilidade", () => {
     expect(await prestadoresDisponiveis(prisma, { latitude: -1.7, longitude: -48.47 }, 10)).toHaveLength(0);
   });
 
+  test("quem está vendo não aparece para si mesmo", async () => {
+    await mudarDisponibilidade(prisma, a, true);
+    await mudarDisponibilidade(prisma, b, true);
+    const lista = await prestadoresDisponiveis(prisma, null, 10, new Date(), a);
+    expect(lista.map((p) => p.nome)).toEqual(["Bia"]);
+  });
+
   test("perfil público sem email e telefone", async () => {
     const p = await perfilPublico(prisma, a);
     expect(p?.nome).toBe("Ana");
