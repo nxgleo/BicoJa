@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { esquemaPagamento } from "@/lib/contratos/esquemas";
 import { escolherPagamento } from "@/lib/contratos/contratos";
-import { avisarEfeitos } from "@/lib/chat/tempo-real";
+import { entregarEfeitos } from "@/lib/contratos/efeitos";
 import { idDaSessao } from "@/lib/contas/sessao";
 import { ERRO_LIMITE, lerJson, limitar, responderErro } from "@/lib/contas/requisicao";
 
@@ -17,6 +17,6 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const { id } = await params;
   const r = await escolherPagamento(prisma, id, userId, validado.data.metodo);
   if (!r.ok) return responderErro(r.status, r.erro);
-  avisarEfeitos(r);
+  entregarEfeitos(r);
   return NextResponse.json({ ok: true });
 }

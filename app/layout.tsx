@@ -4,6 +4,7 @@ import "./globals.css";
 import { Providers } from "./providers";
 import { ScriptTema } from "@/components/layout/ScriptTema";
 import { RegistrarServiceWorker } from "@/components/pwa/RegistrarServiceWorker";
+import { AvisoSemInternet } from "@/components/pwa/AvisoSemInternet";
 
 const nunito = Nunito({
   variable: "--font-nunito",
@@ -38,6 +39,7 @@ export default function RootLayout({
         <ScriptTema />
       </head>
       <body className={`${nunito.variable} min-h-screen bg-fundo text-texto antialiased`}>
+        <AvisoSemInternet />
         <Providers>{children}</Providers>
         <RegistrarServiceWorker />
       </body>

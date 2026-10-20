@@ -5,6 +5,8 @@ import { criarPedido, meusPedidos } from "@/lib/pedidos/pedidos";
 import { primeiroErro } from "@/lib/contas/esquemas";
 import { ERRO_LIMITE, lerJson, limitar, responderErro } from "@/lib/contas/requisicao";
 import { idDaSessao } from "@/lib/contas/sessao";
+import { avisarPrestadoresDoUrgente } from "@/lib/pedidos/avisar-urgente";
+import { avisar } from "@/lib/chat/tempo-real";
 
 // POST /api/pedidos — publicar pedido (normal ou urgente)
 export async function POST(req: Request) {
@@ -22,6 +24,12 @@ export async function POST(req: Request) {
 
   const r = await criarPedido(prisma, userId, validado.data);
   if (!r.ok) return responderErro(400, r.erro, r.campo);
+  if (validado.data.urgente) {
+    // Não faz a pessoa esperar: avisa os prestadores em segundo plano
+    void avisarPrestadoresDoUrgente(prisma, r.id)
+      .then((avisados) => avisar(avisados, "aviso:novo", {}))
+      .catch(() => {});
+  }
   return NextResponse.json({ ok: true, id: r.id }, { status: 201 });
 }
 

@@ -3,7 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { esquemaCancelar } from "@/lib/contratos/esquemas";
 import { cancelarContrato } from "@/lib/contratos/contratos";
-import { avisarEfeitos } from "@/lib/chat/tempo-real";
+import { entregarEfeitos } from "@/lib/contratos/efeitos";
 import { idDaSessao } from "@/lib/contas/sessao";
 import { ERRO_LIMITE, lerJson, limitar, responderErro } from "@/lib/contas/requisicao";
 
@@ -20,6 +20,6 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const { id } = await params;
   const r = await cancelarContrato(prisma, id, userId, validado.data.motivo);
   if (!r.ok) return responderErro(r.status, r.erro);
-  avisarEfeitos(r);
+  entregarEfeitos(r);
   return NextResponse.json({ ok: true });
 }

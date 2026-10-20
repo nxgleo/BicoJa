@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { esquemaConcluir } from "@/lib/contratos/esquemas";
 import { concluirComCodigo } from "@/lib/contratos/contratos";
-import { avisarEfeitos } from "@/lib/chat/tempo-real";
+import { entregarEfeitos } from "@/lib/contratos/efeitos";
 import { primeiroErro } from "@/lib/contas/esquemas";
 import { idDaSessao } from "@/lib/contas/sessao";
 import { ERRO_LIMITE, lerJson, limitar, responderErro } from "@/lib/contas/requisicao";
@@ -22,6 +22,6 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const { id } = await params;
   const r = await concluirComCodigo(prisma, id, userId, validado.data.codigo);
   if (!r.ok) return responderErro(r.status, r.erro, r.campo);
-  avisarEfeitos(r);
+  entregarEfeitos(r);
   return NextResponse.json({ ok: true });
 }

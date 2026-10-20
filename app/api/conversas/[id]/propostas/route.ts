@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { criarEsquemaProposta } from "@/lib/chat/esquemas";
 import { enviarProposta } from "@/lib/chat/conversas";
 import { avisar } from "@/lib/chat/tempo-real";
-import { exigirContaCompleta, responderFalha } from "@/lib/chat/requisicao";
+import { exigirContaCompleta, pushParaOutro, responderFalha } from "@/lib/chat/requisicao";
 import { primeiroErro } from "@/lib/contas/esquemas";
 import { ERRO_LIMITE, lerJson, limitar, responderErro } from "@/lib/contas/requisicao";
 
@@ -23,5 +23,6 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const r = await enviarProposta(prisma, id, quem.userId, validado.data);
   if (!r.ok) return responderFalha(r);
   avisar(r.avisar, "chat:mensagens", { conversaId: id, mensagens: r.mensagens });
+  pushParaOutro(r.avisar, quem.userId, id, `${quem.nome} mandou uma proposta`);
   return NextResponse.json({ ok: true, mensagens: r.mensagens }, { status: 201 });
 }

@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { esquemaResposta } from "@/lib/chat/esquemas";
 import { responderProposta } from "@/lib/chat/conversas";
 import { avisar } from "@/lib/chat/tempo-real";
-import { exigirContaCompleta, responderFalha } from "@/lib/chat/requisicao";
+import { exigirContaCompleta, pushParaOutro, responderFalha } from "@/lib/chat/requisicao";
 import { ERRO_LIMITE, lerJson, limitar, responderErro } from "@/lib/contas/requisicao";
 
 type Params = { params: Promise<{ id: string; mensagemId: string }> };
@@ -20,6 +20,8 @@ export async function POST(req: Request, { params }: Params) {
   const r = await responderProposta(prisma, id, mensagemId, quem.userId, validado.data.acao);
   if (!r.ok) return responderFalha(r);
   avisar(r.avisar, "chat:mensagens", { conversaId: id, mensagens: r.mensagens });
+  const aceitou = validado.data.acao === "aceitar";
+  pushParaOutro(r.avisar, quem.userId, id, aceitou ? `${quem.nome} aceitou sua proposta. Combinado!` : `${quem.nome} recusou sua proposta`);
   for (const o of r.conversasAvisadas ?? []) {
     avisar(o.avisar, "chat:mensagens", { conversaId: o.conversaId, mensagens: o.mensagens });
   }
