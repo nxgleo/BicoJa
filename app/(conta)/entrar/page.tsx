@@ -36,7 +36,7 @@ function FormularioEntrar() {
     // Cadastro pela metade: continua do passo que falta
     const usuario = (await getSession())?.user;
     const etapa = usuario ? etapaDoCadastro(usuario) : "completo";
-    router.push(etapa === "codigo" ? "/cadastro/codigo" : etapa === "foto" ? "/cadastro/foto" : voltar);
+    router.push(etapa === "codigo" ? "/cadastro/codigo" : voltar);
     router.refresh();
   }
 

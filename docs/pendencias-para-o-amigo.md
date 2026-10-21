@@ -16,7 +16,8 @@ Lista do que encontramos no back end durante o front novo. Está dividida em: **
 10. **`npm audit` avisa sobre o `postcss`** (dependência do Next). Atualizar o Next quando sair a correção.
 11. **Código morto:** `lib/socket.ts` (tem o `join-room` inseguro antigo e ninguém usa) — pode apagar. O modelo `Proposta` e as rotas `propostas/*` não são mais usados pelo front.
 12. **`.env`**: o `.env.example` agora lista tudo que é preciso (`DATABASE_URL`, `REDIS_URL`, `NEXTAUTH_URL`, `NEXTAUTH_SECRET`, `NEXT_PUBLIC_SITE_URL`, chaves VAPID e SMTP). Em produção, o `NEXTAUTH_SECRET` precisa ser longo e secreto: ele também protege o código de conclusão e as rotas internas.
-13. **Depois de `npm install`, rodar `npx prisma generate --schema Prisma/schema.prisma` à mão** (o npm novo não roda o postinstall do Prisma). No Windows, pare o `npm run dev` antes (senão dá EPERM).
+13. **Confirmação do email está desligada para testar** (`CONFIRMAR_EMAIL=nao` no `.env`). Antes de publicar: pôr `sim` e configurar o SMTP. A foto de perfil virou opcional (dá para pular no cadastro).
+14. **Depois de `npm install`, rodar `npx prisma generate --schema Prisma/schema.prisma` à mão** (o npm novo não roda o postinstall do Prisma). No Windows, pare o `npm run dev` antes (senão dá EPERM).
 
 ## B. O que mudamos nos seus arquivos
 

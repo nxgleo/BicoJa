@@ -1,19 +1,13 @@
 // Decide para onde mandar a pessoa conforme o login e a etapa do cadastro.
 // Usado pelo middleware.ts (roda antes de cada página).
 
-export type Etapa = "codigo" | "foto" | "completo";
-type Token = { emailVerificado?: boolean; temFoto?: boolean } | null;
+// A foto é opcional (dá para pular e pôr depois no Perfil), então não é uma etapa obrigatória.
+export type Etapa = "codigo" | "completo";
+type Token = { emailVerificado?: boolean } | null;
 
 const PAGINAS_COM_LOGIN = ["/perfil", "/pedidos", "/conversas", "/prestador", "/quero-fazer-bicos", "/contratos", "/avisos"];
-const TELA_DA_ETAPA: Record<Exclude<Etapa, "completo">, string> = {
-  codigo: "/cadastro/codigo",
-  foto: "/cadastro/foto",
-};
-
-export function etapaDoCadastro(t: { emailVerificado?: boolean; temFoto?: boolean }): Etapa {
-  if (!t.emailVerificado) return "codigo";
-  if (!t.temFoto) return "foto";
-  return "completo";
+export function etapaDoCadastro(t: { emailVerificado?: boolean }): Etapa {
+  return t.emailVerificado ? "completo" : "codigo";
 }
 
 function dentro(caminho: string, base: string): boolean {
@@ -27,7 +21,7 @@ function paraEntrar(caminho: string): string {
 /** Endereço para onde redirecionar, ou null para deixar abrir a página. */
 export function destinoParaPagina(caminho: string, token: Token): string | null {
   const etapa = token ? etapaDoCadastro(token) : null;
-  const telaQueFalta = etapa && etapa !== "completo" ? TELA_DA_ETAPA[etapa] : null;
+  const telaQueFalta = etapa === "codigo" ? "/cadastro/codigo" : null;
 
   // Entrar / começar cadastro: sempre abrem do começo (mesmo com cadastro pela metade).
   // O passo que falta é retomado depois de entrar.
@@ -38,7 +32,8 @@ export function destinoParaPagina(caminho: string, token: Token): string | null 
   // Passos do cadastro depois de criar a conta
   if (dentro(caminho, "/cadastro")) {
     if (!token) return paraEntrar(caminho);
-    if (caminho === "/cadastro/pronto") return telaQueFalta;
+    // Foto e "pronto" abrem a qualquer hora depois de confirmar o email
+    if (caminho === "/cadastro/pronto" || caminho === "/cadastro/foto") return telaQueFalta;
     if (caminho === telaQueFalta) return null;
     return telaQueFalta ?? "/cadastro/pronto";
   }

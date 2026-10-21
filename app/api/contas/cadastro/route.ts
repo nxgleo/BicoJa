@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { criarConta } from "@/lib/contas/cadastro";
 import { enviarCodigo } from "@/lib/contas/codigos";
+import { confirmarEmailLigado } from "@/lib/contas/config";
 import { esquemaCadastro, primeiroErro } from "@/lib/contas/esquemas";
 import { ERRO_LIMITE, ipDaRequisicao, lerJson, limitar, responderErro } from "@/lib/contas/requisicao";
 
@@ -21,9 +22,11 @@ export async function POST(req: Request) {
     const resultado = await criarConta(prisma, validado.data);
     if (!resultado.ok) return responderErro(409, resultado.erro, resultado.campo);
     // Já manda o código para o email. Se falhar, a tela do código tem "Mandar de novo".
-    await enviarCodigo(prisma, resultado.userId, "EMAIL_CADASTRO").catch((erro) => {
-      console.error("Erro ao enviar código do cadastro:", erro);
-    });
+    if (confirmarEmailLigado()) {
+      await enviarCodigo(prisma, resultado.userId, "EMAIL_CADASTRO").catch((erro) => {
+        console.error("Erro ao enviar código do cadastro:", erro);
+      });
+    }
     return NextResponse.json({ ok: true }, { status: 201 });
   } catch (erro) {
     console.error("Erro ao criar conta:", erro);

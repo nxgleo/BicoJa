@@ -16,9 +16,7 @@ export default async function LayoutApp({
   const modo =
     sessao?.user?.modoAtual === "PRESTADOR" ? "prestador" : "cliente";
   // O chat em tempo real só liga para quem terminou o cadastro
-  const podeConversar = Boolean(
-    sessao?.user?.id && sessao.user.emailVerificado && sessao.user.temFoto,
-  );
+  const podeConversar = Boolean(sessao?.user?.id && sessao.user.emailVerificado);
 
   return (
     <ProvedorChat userId={podeConversar ? sessao!.user.id : null}>

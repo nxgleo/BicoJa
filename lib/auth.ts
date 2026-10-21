@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { autenticar } from "@/lib/contas/entrar";
 import { esquemaEntrar } from "@/lib/contas/esquemas";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { confirmarEmailLigado } from "@/lib/contas/config";
 
 /** Lê do banco o que a sessão precisa saber (etapa do cadastro, modo, foto). */
 async function dadosDaSessao(id: string) {
@@ -19,7 +20,8 @@ async function dadosDaSessao(id: string) {
     name: user.nome,
     email: user.email,
     picture: user.image,
-    emailVerificado: Boolean(user.emailVerified),
+    // Com a confirmação desligada (CONFIRMAR_EMAIL=nao), toda conta conta como confirmada
+    emailVerificado: Boolean(user.emailVerified) || !confirmarEmailLigado(),
     temFoto: Boolean(user.image),
     modoAtual: user.modoAtual,
     role: user.role,

@@ -9,12 +9,8 @@ import { enviarPush } from "@/lib/push";
 export async function exigirContaCompleta(): Promise<{ userId: string; nome: string } | { resposta: Response }> {
   const u = (await getServerSession(authOptions))?.user;
   if (!u?.id) return { resposta: responderErro(401, "Entre na sua conta para continuar.") };
-  if (!u.emailVerificado || !u.temFoto) {
-    return {
-      resposta: responderErro(403, "Termine seu cadastro para conversar.", undefined, {
-        destino: u.emailVerificado ? "/cadastro/foto" : "/cadastro/codigo",
-      }),
-    };
+  if (!u.emailVerificado) {
+    return { resposta: responderErro(403, "Termine seu cadastro para conversar.", undefined, { destino: "/cadastro/codigo" }) };
   }
   return { userId: u.id, nome: (u.name ?? "Alguém").split(" ")[0] };
 }

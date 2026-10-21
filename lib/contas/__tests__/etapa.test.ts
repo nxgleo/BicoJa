@@ -6,9 +6,9 @@ const semFoto = { emailVerificado: true, temFoto: false };
 const completo = { emailVerificado: true, temFoto: true };
 
 describe("etapaDoCadastro", () => {
-  test("ordem: código, foto, completo", () => {
+  test("ordem: código, completo", () => {
     expect(etapaDoCadastro(semEmail)).toBe("codigo");
-    expect(etapaDoCadastro(semFoto)).toBe("foto");
+    expect(etapaDoCadastro(semFoto)).toBe("completo"); // foto é opcional
     expect(etapaDoCadastro(completo)).toBe("completo");
   });
 });
@@ -21,7 +21,7 @@ describe("destinoParaPagina", () => {
 
   test("cadastro incompleto vai para o passo que falta", () => {
     expect(destinoParaPagina("/conversas", semEmail)).toBe("/cadastro/codigo");
-    expect(destinoParaPagina("/perfil", semFoto)).toBe("/cadastro/foto");
+    expect(destinoParaPagina("/perfil", semFoto)).toBeNull(); // sem foto também entra
   });
 
   test("cadastro completo entra normalmente", () => {
@@ -40,7 +40,8 @@ describe("destinoParaPagina", () => {
   });
 
   test("telas do cadastro levam ao passo certo", () => {
-    expect(destinoParaPagina("/cadastro/codigo", semFoto)).toBe("/cadastro/foto");
+    expect(destinoParaPagina("/cadastro/codigo", semFoto)).toBe("/cadastro/pronto");
+    expect(destinoParaPagina("/cadastro/foto", completo)).toBeNull(); // trocar/pôr foto depois
     expect(destinoParaPagina("/cadastro/foto", semEmail)).toBe("/cadastro/codigo");
     expect(destinoParaPagina("/cadastro/codigo", null)).toBe("/entrar?voltar=%2Fcadastro%2Fcodigo");
     expect(destinoParaPagina("/cadastro/codigo", semEmail)).toBeNull();
@@ -48,7 +49,7 @@ describe("destinoParaPagina", () => {
 
   test("entrar e cadastro sempre abrem do começo se o cadastro está pela metade", () => {
     expect(destinoParaPagina("/entrar", semEmail)).toBeNull();
-    expect(destinoParaPagina("/entrar", semFoto)).toBeNull();
+    expect(destinoParaPagina("/entrar", semFoto)).toBe("/");
     expect(destinoParaPagina("/cadastro", semEmail)).toBeNull();
     expect(destinoParaPagina("/cadastro/codigo", semEmail)).toBeNull();
   });

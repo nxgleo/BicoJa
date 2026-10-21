@@ -45,7 +45,7 @@ Pessoa toca "Enviar"  →  front chama POST /api/conversas/123/mensagens
 - **`cadastro.ts`** — cria a conta. A senha é guardada com **bcrypt** (um "embaralhamento" que não dá para desfazer; nem nós sabemos a senha).
 - **`codigos.ts`** — manda o código por email. No banco fica só o **hash** do código (outra forma de embaralhar), nunca o número. Cada código aceita poucas tentativas; a contagem é "atômica" (dois toques ao mesmo tempo não ganham tentativa extra).
 - **`entrar.ts`** — confere email/celular + senha. Mesmo quando a conta não existe, ele faz a conta da senha (`HASH_FALSO`), para quem tenta adivinhar não perceber pelo tempo de resposta.
-- **`etapa.ts`** — decide para onde mandar a pessoa (falta código? falta foto?). Usado pelo `middleware.ts`, que roda antes de cada página. Também tem o `caminhoSeguro`, que impede o golpe de mandar a pessoa para um site falso depois de entrar.
+- **`etapa.ts`** — decide para onde mandar a pessoa (falta o código do email?). A foto é opcional. Com `CONFIRMAR_EMAIL=nao` no `.env` (o `lib/contas/config.ts` lê essa chave), o código é pulado e toda conta conta como confirmada, para testar sem email. Usado pelo `middleware.ts`, que roda antes de cada página. Também tem o `caminhoSeguro`, que impede o golpe de mandar a pessoa para um site falso depois de entrar.
 - **`lib/imagens.ts`** — toda foto passa pelo **sharp**: é convertida para WebP, diminuída e perde os dados escondidos (como a localização GPS da foto). O nome do arquivo leva o id do dono, para ninguém usar ou apagar a foto de outra pessoa.
 - **Rotas:** `app/api/contas/*` (cadastro, codigo, senha, foto, perfil, modo, prestador, endereco, email).
 
