@@ -10,6 +10,17 @@ export function etapaDoCadastro(t: { emailVerificado?: boolean }): Etapa {
   return t.emailVerificado ? "completo" : "codigo";
 }
 
+// Telas onde a conta pela metade (sem o código do email) pode continuar
+const PASSOS_DEPOIS_DA_CONTA = ["/cadastro/codigo", "/cadastro/foto", "/cadastro/pronto"];
+
+/**
+ * Criou a conta mas saiu antes de confirmar o email? Encerra essa sessão pela metade:
+ * ao voltar, a pessoa começa pela tela de entrar e o código é pedido depois de entrar.
+ */
+export function deveEncerrarSessao(caminho: string, token: Token): boolean {
+  return Boolean(token) && etapaDoCadastro(token!) === "codigo" && !PASSOS_DEPOIS_DA_CONTA.includes(caminho);
+}
+
 function dentro(caminho: string, base: string): boolean {
   return caminho === base || caminho.startsWith(`${base}/`);
 }

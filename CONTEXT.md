@@ -103,7 +103,7 @@ lib/             regras do negócio (recebem `prisma` como argumento, por isso d
 Prisma/          schema.prisma + migrations
 public/sw.js     service worker (sem internet + push)
 server.js        Next + Socket.IO + chamada dos prazos a cada 15 min
-middleware.ts    manda para entrar / passo do cadastro que falta (usa lib/contas/etapa.ts)
+middleware.ts    manda para entrar / passo que falta; encerra a sessão de cadastro pela metade (lib/contas/etapa.ts)
 scripts/dados-teste.mjs  cria contas e dados de exemplo
 docs/            explicação do back para iniciantes + pendências para o Leo
 uploads/         fotos enviadas (fora do Git)
@@ -202,7 +202,7 @@ uploads/         fotos enviadas (fora do Git)
 - O código do email pode ser desligado com `CONFIRMAR_EMAIL=nao`.
 - Sem o email confirmado, a pessoa não conversa nem combina serviço (✅).
 - A foto **não é obrigatória**: dá para "Pular por agora" e pôr depois no Perfil. Sem foto aparece a inicial do nome.
-- As telas Entrar e Cadastro sempre abrem do começo. O passo que falta é retomado depois de entrar.
+- As telas Entrar e Cadastro sempre abrem do começo. Se a pessoa cria a conta e sai antes de digitar o código, essa sessão pela metade é encerrada (`deveEncerrarSessao` no `middleware.ts`): ao voltar, começa pelo login, e o código é pedido depois de entrar.
 - Código do email: 6 números, vale 10 minutos, 1 envio por minuto, 5 tentativas.
 
 **Busca:** prestadores perto primeiro (PostGIS, até 30 km). O endereço vira coordenadas pelo Nominatim (tempo limite de 8 s).

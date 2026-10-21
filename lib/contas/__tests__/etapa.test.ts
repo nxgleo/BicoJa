@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { caminhoSeguro, destinoParaPagina, etapaDoCadastro } from "@/lib/contas/etapa";
+import { caminhoSeguro, destinoParaPagina, deveEncerrarSessao, etapaDoCadastro } from "@/lib/contas/etapa";
 
 const semEmail = { emailVerificado: false, temFoto: false };
 const semFoto = { emailVerificado: true, temFoto: false };
@@ -52,6 +52,23 @@ describe("destinoParaPagina", () => {
     expect(destinoParaPagina("/entrar", semFoto)).toBe("/");
     expect(destinoParaPagina("/cadastro", semEmail)).toBeNull();
     expect(destinoParaPagina("/cadastro/codigo", semEmail)).toBeNull();
+  });
+});
+
+describe("deveEncerrarSessao", () => {
+  test("saiu do cadastro antes do código: encerra (volta pela tela de entrar)", () => {
+    expect(deveEncerrarSessao("/", semEmail)).toBe(true);
+    expect(deveEncerrarSessao("/entrar", semEmail)).toBe(true);
+    expect(deveEncerrarSessao("/cadastro", semEmail)).toBe(true);
+    expect(deveEncerrarSessao("/perfil", semEmail)).toBe(true);
+  });
+
+  test("continua nos passos do cadastro ou com o email confirmado", () => {
+    expect(deveEncerrarSessao("/cadastro/codigo", semEmail)).toBe(false);
+    expect(deveEncerrarSessao("/cadastro/foto", semEmail)).toBe(false);
+    expect(deveEncerrarSessao("/", semFoto)).toBe(false);
+    expect(deveEncerrarSessao("/", completo)).toBe(false);
+    expect(deveEncerrarSessao("/", null)).toBe(false);
   });
 });
 
