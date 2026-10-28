@@ -2,7 +2,7 @@
 
 > [!NOTE]
 > Mapa do projeto: o que existe, onde está e as regras que valem. É a referência central para front e back.
-> **Fonte da verdade:** o código. O banco completo está em `Prisma/schema.prisma`; a explicação para iniciantes, em `docs/explicacao-do-back-end.md`; o que falta no back, em `docs/pendencias-para-o-amigo.md`.
+> **Fonte da verdade:** o código. O banco completo está em `Prisma/schema.prisma`; a explicação para iniciantes, em `docs/explicacao-do-back-end.md`; o que falta no back, em `docs/pendencias.md`.
 > Atualizado em 21/10/2026 (depois das Fases 2 a 6 do front novo).
 
 ---
@@ -184,7 +184,7 @@ uploads/         fotos enviadas (fora do Git)
 | `/interno/prazos` | POST 🔑 | Prazos automáticos (chamada pelo `server.js` a cada 15 min) |
 
 ### Rotas antigas (do primeiro back, o front novo não usa)
-`/register`, `/servicos`, `/servicos/[id]`, `/propostas`, `/propostas/[id]`, `/pagamentos/simular`. Os problemas delas estão em `docs/pendencias-para-o-amigo.md`.
+`/register`, `/servicos`, `/servicos/[id]`, `/propostas`, `/propostas/[id]`, `/pagamentos/simular`. Os problemas delas estão em `docs/pendencias.md`.
 
 ### Tempo real (`server.js` + Socket.IO)
 - Só conecta quem está logado (cookie do NextAuth) e vem do próprio site.
@@ -268,7 +268,7 @@ As rotas novas respondem assim:
 - [x] **Simplificação para testar (21/10/2026):** confirmação do email desligável (`CONFIRMAR_EMAIL`) e foto opcional
 - [x] **28/10/2026:** datas em dia/mês/ano, pagamento pelo simulador do Leo, código de "Esqueci a senha" na tela em modo de teste, limpeza de arquivos de rascunho
 
-**Ainda falta** (detalhes em `docs/pendencias-para-o-amigo.md`):
+**Ainda falta** (detalhes em `docs/pendencias.md`):
 - [ ] Mercado Pago de verdade
 - [ ] Verificação do celular (SMS)
 - [ ] Tela de administrador para denúncias
@@ -290,4 +290,4 @@ As rotas novas respondem assim:
 - **Rotas internas:** só com `x-chave-interna` = sha256(`"<uso>:" + NEXTAUTH_SECRET`). Sem a chave respondem 404.
 - **Sair da conta:** limpa o socket, o push deste celular, as páginas guardadas e o `sessionStorage`.
 - **Sem internet:** páginas privadas (conversas, contratos, perfil, avisos, entrar, cadastro) e fotos do chat **nunca** ficam guardadas.
-- **Correções do primeiro back** já feitas: socket inseguro, push sem login, inscrição de push com `userId` de outra pessoa. As que ainda faltam estão em `docs/pendencias-para-o-amigo.md`.
+- **Correções do primeiro back** já feitas: socket inseguro, push sem login, inscrição de push com `userId` de outra pessoa. As que ainda faltam estão em `docs/pendencias.md`.
