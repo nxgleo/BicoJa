@@ -13,10 +13,14 @@ export async function POST(req: Request) {
   if (!validado.success) return responderErro(400, primeiroErro(validado.error).erro, "email");
 
   const user = await prisma.user.findUnique({ where: { email: validado.data.email }, select: { id: true } });
+  let codigoDeTeste: string | undefined;
   if (user) {
-    await enviarCodigo(prisma, user.id, "RECUPERAR_SENHA").catch((erro) => {
+    const r = await enviarCodigo(prisma, user.id, "RECUPERAR_SENHA").catch((erro) => {
       console.error("Erro ao enviar código de recuperação:", erro);
+      return null;
     });
+    // Só existe em teste, sem servidor de email (ver mostrarCodigoNaTela)
+    if (r?.ok) codigoDeTeste = r.codigoDeTeste;
   }
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, codigoDeTeste });
 }

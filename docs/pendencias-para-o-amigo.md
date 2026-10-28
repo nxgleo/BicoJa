@@ -1,17 +1,17 @@
 # Pendências do back end — para o Leo (nxgleo)
 
-Lista do que encontramos no back end durante o front novo. Está dividida em: **o que ainda precisa ser feito**, **o que eu (Claude, com o Kazuo) mudei nos seus arquivos** e **o que foi criado de novo**. A explicação completa das partes novas está em `docs/explicacao-do-back-end.md`.
+Lista do que encontramos no back end durante o front novo. Está dividida em: **o que ainda precisa ser feito**, **o que o Kazuo mudou nos seus arquivos** e **o que foi criado de novo**. A explicação completa das partes novas está em `docs/explicacao-do-back-end.md`.
 
 ## A. Precisa ser feito (por ordem de importância)
 
 1. **`GET /api/propostas` é público e mostra email e telefone dos prestadores.** Qualquer pessoa lista as propostas e pega o contato de todo mundo. Sugestão: exigir login e tirar `email`/`telefone` do `select` (o front novo não usa essa rota — a proposta agora vive no chat).
-2. **`POST /api/pagamentos/simular` não confere quem está logado nem se a proposta é da pessoa.** Qualquer um "paga" a proposta de outro. O front novo usa `POST /api/contratos/:id/pagamento`; dá para apagar a rota antiga junto com `lib/payments.ts`.
+2. **`POST /api/pagamentos/simular` não confere quem está logado nem se a proposta é da pessoa.** Qualquer um "paga" a proposta de outro. O front novo usa `POST /api/contratos/:id/pagamento`; dá para apagar só a rota antiga. **Não apague `lib/payments.ts`**: o front novo agora usa o seu `processarPagamentoSimulado` dentro de `escolherPagamento`.
 3. **`POST /api/register` não valida nada** (formato do email, força da senha) e **aceita `role` vindo do corpo**. O front novo usa `POST /api/contas/cadastro` (com validação). Sugestão: apagar `/api/register` ou fazer ele usar `lib/contas/cadastro.ts`.
 4. **`x-forwarded-for` é lido direto** em `pagamentos/simular`, `propostas`, `servicos` (e no limite de login em `lib/auth.ts`, `lib/contas/requisicao.ts`). Só é confiável atrás de um proxy que sobrescreve esse cabeçalho (Vercel, Nginx…). Fora disso, alguém troca o IP e escapa do limite. Decidir quando escolher onde hospedar.
 5. **Sessões antigas continuam valendo depois de trocar a senha** (JWT do NextAuth não tem "derrubar todas"). Sugestão: guardar uma `versaoSessao` no `User` e conferir no callback `jwt`.
 6. **Celular não é verificado** (só o email tem código). Hoje alguém pode cadastrar o celular de outra pessoa e "ocupar" o número. Precisa de SMS (pago) — decidir com o Kazuo.
 7. **Denúncias não têm tela de revisão.** Ficam na tabela `Denuncia` com `revisada = false`. Precisa de uma área de administrador.
-8. **Pagamento ainda é simulado.** Quando ligar o Mercado Pago: o PIX/cartão real entra em `escolherPagamento` (`lib/contratos/contratos.ts`), o estorno em `cancelarContrato` e a liberação em `concluirComCodigo`/`processarPrazos`. A taxa da plataforma está em `TAXA_PLATAFORMA_PERCENTUAL` (hoje 0).
+8. **Pagamento ainda é simulado** (pelo seu `lib/payments.ts`). Quando ligar o Mercado Pago: troque `processarPagamentoSimulado` pela cobrança real em `escolherPagamento` (`lib/contratos/contratos.ts`), usando uma chave de idempotência (o id do contrato) para dois toques não cobrarem duas vezes, o estorno em `cancelarContrato` e a liberação em `concluirComCodigo`/`processarPrazos`. A taxa da plataforma está em `TAXA_PLATAFORMA_PERCENTUAL` (hoje 0).
 9. **CSP com `'unsafe-inline'` nos scripts** (`lib/seguranca.ts`). Melhor trocar por *nonce* quando o site estiver estável (exige ajustar o `middleware.ts`).
 10. **`npm audit` avisa sobre o `postcss`** (dependência do Next). Atualizar o Next quando sair a correção.
 11. **Código morto:** `lib/socket.ts` (tem o `join-room` inseguro antigo e ninguém usa) — pode apagar. O modelo `Proposta` e as rotas `propostas/*` não são mais usados pelo front.
@@ -33,11 +33,13 @@ Lista do que encontramos no back end durante o front novo. Está dividida em: **
 | `app/api/notificacoes/route.ts` | Virou rota interna (chave `x-chave-interna`) | Antes qualquer um mandava push para qualquer usuário |
 | `public/sw.js` | Funcionamento sem internet + push mais seguro | PWA |
 | `components/notificacoes/BotaoNotificacoes.tsx` | Não manda mais `userId`; ganhou "Desligar" | Acompanha a correção da rota |
+| `lib/redis.ts` | `maxRetriesPerRequest: 1` | Com o Redis desligado, as telas travavam para sempre; agora dão erro rápido |
+| `lib/payments.ts` | **Nada mudou no arquivo**; agora ele é chamado pelo pagamento do contrato | Usar o seu simulador até o Mercado Pago entrar |
 
 ## C. O que foi criado de novo
 
 - **Tabelas:** `CodigoVerificacao`, `EnderecoUsuario`, `Pedido`, `Conversa`, `Mensagem`, `Contrato`, `Bloqueio`, `Denuncia`, `Avaliacao`, `Aviso` (+ campos novos em `User`, `Servico`, `PerfilPrestador`).
 - **Rotas:** `contas/*`, `arquivos/*`, `pedidos/*`, `anuncios/*`, `prestador/disponivel`, `conversas/*`, `contratos/*`, `avisos/*`, `interno/prazos`.
-- **Testes:** `npm test` (177) e `npm run test:integracao` (85, banco `banco_servicos_teste` do `.env.test`).
+- **Testes:** `npm test` (181) e `npm run test:integracao` (85, banco `banco_servicos_teste` do `.env.test`).
 
 **Importante sobre o GitHub:** a conta do Kazuo (`kazu0pureza777`) ainda não tem permissão para enviar para `nxgleo/BicoJa`. Adicione ele como colaborador (Settings → Collaborators) para ele mandar todo esse trabalho.

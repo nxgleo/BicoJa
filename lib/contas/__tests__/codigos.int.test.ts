@@ -37,8 +37,10 @@ describe("gerarCodigo", () => {
 
 describe("enviarCodigo e conferirCodigo", () => {
   test("código certo confirma o email e o banco não guarda o número", async () => {
-    expect(await enviarCodigo(prisma, userId, "EMAIL_CADASTRO")).toEqual({ ok: true });
+    const enviado = await enviarCodigo(prisma, userId, "EMAIL_CADASTRO");
     const codigo = ultimoCodigo();
+    // Sem SMTP e fora da produção, o mesmo código do email volta para aparecer na tela
+    expect(enviado).toEqual({ ok: true, codigoDeTeste: codigo });
     const salvo = await prisma.codigoVerificacao.findFirstOrThrow({ where: { userId } });
     expect(salvo.codigoHash).not.toContain(codigo);
 

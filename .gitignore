@@ -14,7 +14,6 @@ yarn-error.log*
 .devin/
 .next/
 tsconfig.tsbuildinfo
-.superpowers/
 
 uploads/
 .env.test

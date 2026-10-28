@@ -22,7 +22,7 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["**/*.int.test.ts"],
-    exclude: ["node_modules", ".next", ".superpowers"],
+    exclude: ["node_modules", ".next"],
     env: envTeste,
     globalSetup: ["./vitest.integracao.setup.ts"],
     fileParallelism: false,

@@ -3,6 +3,7 @@
 // Cada função confere quem pode fazer o quê e devolve os "efeitos" para as rotas avisarem pelo socket.
 import type { Contrato, Prisma, PrismaClient } from "@prisma/client";
 import { criarAviso } from "@/lib/avisos";
+import { processarPagamentoSimulado } from "@/lib/payments";
 import { formatarPreco } from "@/lib/formatar";
 import { paraMensagemChat, type MensagemChat } from "@/lib/chat/conversas";
 import { cifrarCodigo, codigoConfere, decifrarCodigo, gerarCodigo } from "@/lib/contratos/codigo";
@@ -93,6 +94,13 @@ export async function escolherPagamento(
 
   const peloApp = metodo !== "DIRETO";
   const taxaValor = peloApp ? Math.round(c.valor * TAXA_PLATAFORMA_PERCENTUAL) / 100 : 0;
+
+  // Pix/cartão passam pelo simulador de pagamento do back end (lib/payments.ts).
+  // Quando o Mercado Pago entrar, é só trocar essa chamada.
+  if (peloApp) {
+    const pagamento = await processarPagamentoSimulado({ propostaId: c.id, valor: c.valor, metodoPagamento: metodo });
+    if (!pagamento.sucesso) return erro(402, "O pagamento não passou. Tente de novo ou escolha outro jeito de pagar.");
+  }
 
   const efeitos = await prisma.$transaction(async (tx) => {
     // Só muda se ainda estiver pendente (dois toques ao mesmo tempo não pagam duas vezes)

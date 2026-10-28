@@ -3,12 +3,12 @@ import { CATEGORIAS } from "@/lib/categorias";
 
 type DataOuTexto = Date | string | null | undefined;
 
-/** "2026-10-20" ou Date (do banco, meia-noite UTC) → "20/10". */
+/** "2026-10-20" ou Date (do banco, meia-noite UTC) → "20/10/2026" (dia, mês e ano, como no Brasil). */
 function diaMes(d: DataOuTexto): string {
   if (!d) return "";
   const texto = typeof d === "string" ? d : d.toISOString().slice(0, 10);
-  const [, mes, dia] = texto.split("-");
-  return `${dia}/${mes}`;
+  const [ano, mes, dia] = texto.split("-");
+  return `${dia}/${mes}/${ano}`;
 }
 
 export function textoQuando(p: {

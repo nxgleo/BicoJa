@@ -19,8 +19,20 @@ describe("SeletorQuando", () => {
     expect(screen.queryByLabelText("De")).toBeNull();
     await userEvent.click(screen.getByRole("radio", { name: "Entre dias" }));
     expect(screen.getByRole("radio", { name: "Entre dias" })).toHaveAttribute("aria-checked", "true");
-    expect(screen.getByLabelText("De")).toHaveAttribute("type", "date");
-    expect(screen.getByLabelText("Até")).toHaveAttribute("type", "date");
+    expect(screen.getByLabelText("De")).toHaveAttribute("placeholder", "dd/mm/aaaa");
+    expect(screen.getByLabelText("Até")).toHaveAttribute("placeholder", "dd/mm/aaaa");
+  });
+
+  test("a data é digitada como dia/mês/ano e vai para o servidor como ano-mês-dia", async () => {
+    let ultimo: Quando = { tipo: "QUALQUER_DIA" };
+    function Espiao() {
+      const [valor, setValor] = useState<Quando>({ tipo: "DIA_CERTO" });
+      return <SeletorQuando valor={valor} onChange={(q) => { ultimo = q; setValor(q); }} />;
+    }
+    render(<Espiao />);
+    await userEvent.type(screen.getByLabelText("Dia"), "25122026");
+    expect(screen.getByLabelText("Dia")).toHaveValue("25/12/2026");
+    expect(ultimo.dataInicio).toBe("2026-12-25");
   });
 
   test("'Dia certo' mostra um campo de data só", async () => {
@@ -56,9 +68,9 @@ describe("CartaoPedido", () => {
 describe("textoQuando", () => {
   test("escreve o quando em português simples", () => {
     expect(textoQuando({ quandoTipo: "QUALQUER_DIA" })).toBe("Qualquer dia");
-    expect(textoQuando({ quandoTipo: "DIA_CERTO", dataInicio: "2026-10-20" })).toBe("Dia 20/10");
+    expect(textoQuando({ quandoTipo: "DIA_CERTO", dataInicio: "2026-10-20" })).toBe("Dia 20/10/2026");
     expect(textoQuando({ quandoTipo: "ENTRE_DIAS", dataInicio: "2026-10-20", dataFim: "2026-10-23", horaInicio: "08:00", horaFim: "18:00" })).toBe(
-      "De 20/10 a 23/10 · das 08:00 às 18:00"
+      "De 20/10/2026 a 23/10/2026 · das 08:00 às 18:00"
     );
     expect(textoQuando({ quandoTipo: "QUALQUER_DIA", horaInicio: "14:00" })).toBe("Qualquer dia · a partir das 14:00");
   });

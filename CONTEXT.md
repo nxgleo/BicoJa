@@ -38,8 +38,8 @@ O **BicoJá** é um marketplace de serviços locais ("bicos"): conecta quem prec
 | **Validação** | zod | Todo dado que chega numa rota é conferido |
 | **Imagens** | sharp | Fotos viram `.webp`, sem dados escondidos (EXIF/GPS) |
 | **Notificações** | web-push (VAPID) | Push no celular, sem o conteúdo das mensagens |
-| **Email** | nodemailer | Códigos. Sem `SMTP_HOST`, o email aparece no terminal |
-| **Externas** | OpenStreetMap Nominatim; Mercado Pago (**ainda simulado**) | Endereço → coordenadas; pagamento |
+| **Email** | nodemailer | Códigos. Sem `SMTP_HOST`, o email aparece no terminal e, fora da produção, o código de "Esqueci a senha" aparece na tela (modo de teste) |
+| **Externas** | OpenStreetMap Nominatim; Mercado Pago (**ainda simulado** pelo `lib/payments.ts` do Leo) | Endereço → coordenadas; pagamento |
 | **Testes** | Vitest, Testing Library, axe-core | Unidade, integração (banco de teste) e acessibilidade |
 
 ---
@@ -106,6 +106,7 @@ server.js        Next + Socket.IO + chamada dos prazos a cada 15 min
 middleware.ts    manda para entrar / passo que falta; encerra a sessão de cadastro pela metade (lib/contas/etapa.ts)
 scripts/dados-teste.mjs  cria contas e dados de exemplo
 docs/            explicação do back para iniciantes + pendências para o Leo
+.claude/         só no seu computador (fora do Git): launch.json para o Claude ligar o site
 uploads/         fotos enviadas (fora do Git)
 ```
 
@@ -117,7 +118,7 @@ uploads/         fotos enviadas (fora do Git)
 | :--- | :--- |
 | `npm run dev` | Liga o site em `http://localhost:3000` (`node server.js`) |
 | `npm run build` / `npm start` | Versão de produção |
-| `npm test` | Testes rápidos (177) |
+| `npm test` | Testes rápidos (181) |
 | `npm run test:integracao` | Testes com banco (85), usam `banco_servicos_teste` do `.env.test` |
 | `npx prisma generate --schema Prisma/schema.prisma` | Rodar à mão depois do `npm install`. No Windows, pare o `npm run dev` antes (senão dá EPERM) |
 
@@ -204,6 +205,9 @@ uploads/         fotos enviadas (fora do Git)
 - A foto **não é obrigatória**: dá para "Pular por agora" e pôr depois no Perfil. Sem foto aparece a inicial do nome.
 - As telas Entrar e Cadastro sempre abrem do começo. Se a pessoa cria a conta e sai antes de digitar o código, essa sessão pela metade é encerrada (`deveEncerrarSessao` no `middleware.ts`): ao voltar, começa pelo login, e o código é pedido depois de entrar.
 - Código do email: 6 números, vale 10 minutos, 1 envio por minuto, 5 tentativas.
+- **Modo de teste do código** (`mostrarCodigoNaTela` em `lib/contas/config.ts`): sem `SMTP_HOST` e fora da produção, "Esqueci a senha" mostra o código na tela. Em produção nunca liga.
+
+**Datas:** sempre dia/mês/ano (`20/10/2026`). O campo `CampoData` é texto com máscara (o campo de data do navegador muda de ordem conforme a língua do celular). O servidor recebe `2026-10-20` e recusa dias que não existem (31/02).
 
 **Busca:** prestadores perto primeiro (PostGIS, até 30 km). O endereço vira coordenadas pelo Nominatim (tempo limite de 8 s).
 
@@ -215,7 +219,7 @@ uploads/         fotos enviadas (fora do Git)
 - O push nunca leva o texto da mensagem.
 
 **Pagamento e código**
-- PIX ou cartão ficam **retidos** até o código.
+- PIX ou cartão passam pelo simulador do back (`processarPagamentoSimulado` em `lib/payments.ts`) e ficam **retidos** até o código. Para o Mercado Pago, é só trocar essa chamada em `escolherPagamento` (`lib/contratos/contratos.ts`).
 - O código de 4 números é guardado criptografado (AES-256-GCM) e só o cliente vê.
 - 5 erros bloqueiam por 15 minutos. Máximo de 30 tentativas por dia por pessoa.
 - Taxa da plataforma: `TAXA_PLATAFORMA_PERCENTUAL` (hoje 0%).
@@ -262,6 +266,7 @@ As rotas novas respondem assim:
 - [x] **Fase 5:** pagamento simulado, código de conclusão, cancelamento, avaliações, Ganhos, avisos
 - [x] **Fase 6:** PWA sem internet, push seguro, revisão de acessibilidade (axe), docs para o Leo
 - [x] **Simplificação para testar (21/10/2026):** confirmação do email desligável (`CONFIRMAR_EMAIL`) e foto opcional
+- [x] **28/10/2026:** datas em dia/mês/ano, pagamento pelo simulador do Leo, código de "Esqueci a senha" na tela em modo de teste, limpeza de arquivos de rascunho
 
 **Ainda falta** (detalhes em `docs/pendencias-para-o-amigo.md`):
 - [ ] Mercado Pago de verdade

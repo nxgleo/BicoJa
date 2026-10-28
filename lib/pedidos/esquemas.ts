@@ -13,6 +13,14 @@ function diaDe(texto: string): number {
   return Date.UTC(a, m - 1, d) / 86_400_000;
 }
 
+/** Barra dias que não existem, como 31/02 (a data é digitada à mão). */
+function dataExiste(texto: string): boolean {
+  const [a, m, d] = texto.split("-").map(Number);
+  const data = new Date(Date.UTC(a, m - 1, d));
+  return data.getUTCFullYear() === a && data.getUTCMonth() === m - 1 && data.getUTCDate() === d;
+}
+const DATA_NAO_EXISTE = "Essa data não existe. Confira o dia e o mês.";
+
 // "Hoje" sempre no horário do Brasil, não no do servidor (que costuma estar em UTC)
 const DIA_NO_BRASIL = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" });
 
@@ -22,8 +30,8 @@ function diaDeHoje(hoje: Date): number {
 
 export const esquemaQuando = z.object({
   tipo: z.enum(["DIA_CERTO", "ENTRE_DIAS", "QUALQUER_DIA"]),
-  dataInicio: z.string().regex(DATA, "Escolha uma data.").optional(),
-  dataFim: z.string().regex(DATA, "Escolha uma data.").optional(),
+  dataInicio: z.string().regex(DATA, "Escolha uma data.").refine(dataExiste, DATA_NAO_EXISTE).optional(),
+  dataFim: z.string().regex(DATA, "Escolha uma data.").refine(dataExiste, DATA_NAO_EXISTE).optional(),
   horaInicio: z.string().regex(HORA, "Escolha um horário válido.").optional(),
   horaFim: z.string().regex(HORA, "Escolha um horário válido.").optional(),
 });

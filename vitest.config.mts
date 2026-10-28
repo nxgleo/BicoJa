@@ -8,6 +8,6 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     setupFiles: ["./vitest.setup.ts"],
-    exclude: ["node_modules", ".next", ".superpowers", "**/*.int.test.ts"],
+    exclude: ["node_modules", ".next", "**/*.int.test.ts"],
   },
 });

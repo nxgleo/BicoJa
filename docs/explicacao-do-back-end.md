@@ -82,7 +82,7 @@ Pessoa toca "Enviar"  →  front chama POST /api/conversas/123/mensagens
 - **O `Contrato` ganhou:** forma de pagamento, status do pagamento (PENDENTE → RETIDO → LIBERADO, ou ESTORNADO, ou DIRETO), taxa da plataforma (0% por enquanto, em `esquemas.ts`), código de conclusão, cancelamento e prazos.
 - **Tabelas novas:** `Avaliacao` (1 a 5 estrelas, uma por pessoa por serviço) e `Aviso` (o sininho).
 - **`contratos.ts`:**
-  - **Pagamento (simulado):** só o cliente escolhe. PIX/cartão "guardam" o valor; "pagar direto" só anota. **Nenhum dado de cartão é pedido** — quando entrar o Mercado Pago de verdade, é ele que cuida disso.
+  - **Pagamento (simulado):** só o cliente escolhe. PIX/cartão passam pelo simulador do Leo (`lib/payments.ts`) e "guardam" o valor; "pagar direto" só anota. **Nenhum dado de cartão é pedido** — quando entrar o Mercado Pago de verdade, é ele que cuida disso.
   - **Código de conclusão (estilo iFood):** 4 números, gerado ao escolher o pagamento. Fica **cifrado** no banco (`codigo.ts`, AES-256-GCM): o cliente pode ver de novo, mas quem olhar o banco não lê. O prestador digita; 5 erros bloqueiam por 15 minutos, e no máximo 30 tentativas por dia.
   - **Cancelar:** qualquer um dos dois, antes do código. O valor guardado volta para o cliente e, se veio de um pedido, o pedido reabre. O motivo aparece no chat.
   - **Prazos** (`processarPrazos`): 3 dias depois da data → o cliente pode marcar "Não aconteceu"; 6 dias → aviso "amanhã libera"; 7 dias → conclui sozinho e libera o valor. O `server.js` chama `POST /api/interno/prazos` a cada 15 minutos, com uma **chave interna** que só o servidor conhece.

@@ -20,6 +20,7 @@ export default function EsqueciSenha() {
   const [carregando, setCarregando] = useState(false);
   const [espera, setEspera] = useState(0);
   const [aviso, setAviso] = useState<string | null>(null);
+  const [codigoDeTeste, setCodigoDeTeste] = useState<string | null>(null);
 
   useEffect(() => {
     if (espera <= 0) return;
@@ -30,11 +31,12 @@ export default function EsqueciSenha() {
   async function mandarNovoCodigo() {
     setErros({});
     setAviso(null);
-    const r = await enviarJson("/api/contas/senha/recuperar", "POST", { email });
+    const r = await enviarJson<{ codigoDeTeste?: string }>("/api/contas/senha/recuperar", "POST", { email });
     if (!r.ok) {
       setErros({ codigo: r.erro });
       return;
     }
+    setCodigoDeTeste(r.dados.codigoDeTeste ?? null);
     setEspera(60);
     setCodigo("");
     setAviso("Se a conta existir, mandamos um código novo.");
@@ -44,13 +46,14 @@ export default function EsqueciSenha() {
     e.preventDefault();
     setCarregando(true);
     setErros({});
-    const r = await enviarJson("/api/contas/senha/recuperar", "POST", { email });
+    const r = await enviarJson<{ codigoDeTeste?: string }>("/api/contas/senha/recuperar", "POST", { email });
     setCarregando(false);
     if (!r.ok) {
       setErros({ email: r.erro });
       focarCampo("email");
       return;
     }
+    setCodigoDeTeste(r.dados.codigoDeTeste ?? null);
     setEspera(60);
     setPasso(2);
   }
@@ -93,6 +96,12 @@ export default function EsqueciSenha() {
       <p className="text-texto-suave">
         Se existir uma conta com <b className="text-texto [overflow-wrap:anywhere]">{email}</b>, mandamos um código de 6 números para lá.
       </p>
+      {codigoDeTeste && (
+        <p role="status" className="rounded-2xl border-2 border-dashed border-marca bg-superficie-suave p-3">
+          <b>Modo de teste</b> (ainda sem email de verdade): seu código é{" "}
+          <b className="text-xl tracking-widest">{codigoDeTeste}</b>
+        </p>
+      )}
       <Campo
         id="codigo"
         rotulo="Código do email"

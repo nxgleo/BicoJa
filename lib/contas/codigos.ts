@@ -4,6 +4,7 @@ import { createHmac, randomInt, timingSafeEqual } from "node:crypto";
 import bcrypt from "bcryptjs";
 import type { PrismaClient, TipoCodigo } from "@prisma/client";
 import { enviarEmail } from "@/lib/email";
+import { mostrarCodigoNaTela } from "@/lib/contas/config";
 
 const VALIDADE_MS = 10 * 60_000;
 const ESPERA_MS = 60_000;
@@ -29,7 +30,7 @@ export async function enviarCodigo(
   userId: string,
   tipo: TipoCodigo,
   agora = new Date()
-): Promise<{ ok: true } | { ok: false; esperarSegundos: number }> {
+): Promise<{ ok: true; codigoDeTeste?: string } | { ok: false; esperarSegundos: number }> {
   const ultimo = await prisma.codigoVerificacao.findFirst({
     where: { userId, tipo },
     orderBy: { createdAt: "desc" },
@@ -64,7 +65,7 @@ export async function enviarCodigo(
     assunto,
     `${frase}\n\n${codigo}\n\nEle vale por 10 minutos. Se não foi você que pediu, pode ignorar este email.`
   );
-  return { ok: true };
+  return mostrarCodigoNaTela() ? { ok: true, codigoDeTeste: codigo } : { ok: true };
 }
 
 export type ResultadoConferir =

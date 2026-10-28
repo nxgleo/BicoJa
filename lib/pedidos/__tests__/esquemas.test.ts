@@ -1,7 +1,7 @@
 // Simula um servidor em UTC (o comum na hospedagem): "hoje" tem que ser o de Belém mesmo assim
 process.env.TZ = "UTC";
 import { describe, expect, test } from "vitest";
-import { criarEsquemaPedido } from "@/lib/pedidos/esquemas";
+import { criarEsquemaPedido, esquemaQuando } from "@/lib/pedidos/esquemas";
 
 const hoje = new Date("2026-10-20T15:00:00Z"); // 20/10/2026, meio-dia em Belém
 const esquema = criarEsquemaPedido(hoje);
@@ -68,4 +68,11 @@ describe("fuso horário", () => {
     const r = noite.safeParse({ ...base, quando: { tipo: "DIA_CERTO", dataInicio: "2026-10-20" } });
     expect(r.success).toBe(true);
   });
+});
+
+test("data digitada que não existe (31/02) é recusada", () => {
+  const r = esquemaQuando.safeParse({ tipo: "DIA_CERTO", dataInicio: "2027-02-31" });
+  expect(r.success).toBe(false);
+  expect(r.error?.issues[0].message).toBe("Essa data não existe. Confira o dia e o mês.");
+  expect(esquemaQuando.safeParse({ tipo: "DIA_CERTO", dataInicio: "2028-02-29" }).success).toBe(true);
 });

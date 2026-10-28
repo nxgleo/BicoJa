@@ -1,6 +1,7 @@
 "use client";
 
 import { Campo } from "@/components/ui";
+import { CampoData } from "@/components/pedidos/CampoData";
 import type { Quando } from "@/lib/pedidos/esquemas";
 
 type Erros = Partial<Record<"dataInicio" | "dataFim" | "horaInicio" | "horaFim", string>>;
@@ -12,14 +13,8 @@ const TIPOS: { tipo: Quando["tipo"]; rotulo: string }[] = [
   { tipo: "QUALQUER_DIA", rotulo: "Qualquer dia" },
 ];
 
-function hojeTexto(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
-
 /** "Quando pode ser?": dia certo, um período de dias, ou qualquer dia — com horário opcional. */
 export function SeletorQuando({ valor, onChange, erros = {} }: Props) {
-  const hoje = hojeTexto();
   const mudar = (parcial: Partial<Quando>) => onChange({ ...valor, ...parcial });
   // Campo vazio vira "sem valor" (não manda texto vazio para o servidor)
   const campo = (nome: keyof Erros) => (e: { target: { value: string } }) => mudar({ [nome]: e.target.value || undefined });
@@ -48,12 +43,12 @@ export function SeletorQuando({ valor, onChange, erros = {} }: Props) {
       </div>
 
       {valor.tipo === "DIA_CERTO" && (
-        <Campo id="quando-dataInicio" rotulo="Dia" type="date" min={hoje} value={valor.dataInicio ?? ""} onChange={campo("dataInicio")} erro={erros.dataInicio} />
+        <CampoData id="quando-dataInicio" rotulo="Dia" valor={valor.dataInicio} onChange={(d) => mudar({ dataInicio: d })} erro={erros.dataInicio} />
       )}
       {valor.tipo === "ENTRE_DIAS" && (
-        <div className="grid grid-cols-2 gap-3">
-          <Campo id="quando-dataInicio" rotulo="De" type="date" min={hoje} value={valor.dataInicio ?? ""} onChange={campo("dataInicio")} erro={erros.dataInicio} />
-          <Campo id="quando-dataFim" rotulo="Até" type="date" min={valor.dataInicio ?? hoje} value={valor.dataFim ?? ""} onChange={campo("dataFim")} erro={erros.dataFim} />
+        <div className="grid grid-cols-1 gap-3 min-[380px]:grid-cols-2">
+          <CampoData id="quando-dataInicio" rotulo="De" valor={valor.dataInicio} onChange={(d) => mudar({ dataInicio: d })} erro={erros.dataInicio} />
+          <CampoData id="quando-dataFim" rotulo="Até" valor={valor.dataFim} onChange={(d) => mudar({ dataFim: d })} erro={erros.dataFim} />
         </div>
       )}
 
