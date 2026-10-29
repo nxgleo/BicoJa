@@ -4,7 +4,8 @@ export interface Coordenadas {
   formattedAddress?: string;
 }
 
-export async function geocodeEndereco(endereco: string): Promise<Coordenadas | null> {
+// tempoLimiteMs: se o serviço de mapas travar, desiste (a tela mostra um aviso em vez de girar para sempre)
+export async function geocodeEndereco(endereco: string, tempoLimiteMs = 8000): Promise<Coordenadas | null> {
   try {
     const response = await fetch(
       `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(endereco)}&countrycodes=br&limit=1`,
@@ -12,8 +13,11 @@ export async function geocodeEndereco(endereco: string): Promise<Coordenadas | n
         headers: {
           "User-Agent": "BicoJaApp/1.0 (contato@bicoja.com.br)",
         },
+        signal: AbortSignal.timeout(tempoLimiteMs),
       }
     );
+
+    if (!response.ok) return null;
 
     const data = await response.json();
 
