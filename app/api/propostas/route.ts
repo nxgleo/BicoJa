@@ -93,6 +93,14 @@ export async function POST(req: Request) {
 
 export async function GET(req: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session || !(session.user as any)?.id) {
+      return NextResponse.json(
+        { success: false, data: null, error: "Não autorizado." },
+        { status: 401 }
+      );
+    }
+
     const { searchParams } = new URL(req.url);
     const servicoId = searchParams.get("servicoId");
     const prestadorId = searchParams.get("prestadorId");
@@ -105,7 +113,7 @@ export async function GET(req: Request) {
       include: {
         servico: true,
         prestador: {
-          select: { id: true, nome: true, email: true, telefone: true },
+          select: { id: true, nome: true },
         },
       },
       orderBy: { createdAt: "desc" },

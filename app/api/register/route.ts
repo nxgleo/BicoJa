@@ -1,43 +1,34 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import bcrypt from "bcryptjs";
+import { criarConta } from "@/lib/contas/cadastro";
+import { enviarCodigo } from "@/lib/contas/codigos";
+import { confirmarEmailLigado } from "@/lib/contas/config";
+import { esquemaCadastro, primeiroErro } from "@/lib/contas/esquemas";
+import { ERRO_LIMITE, ipDaRequisicao, lerJson, limitar, responderErro } from "@/lib/contas/requisicao";
 
 export async function POST(req: Request) {
+  const validado = esquemaCadastro.safeParse(await lerJson(req));
+  if (!validado.success) {
+    const { campo, erro } = primeiroErro(validado.error);
+    return responderErro(400, erro, campo);
+  }
+
+  if (!(await limitar(`cadastro:${ipDaRequisicao(req)}`, 20, 600)))
+    return responderErro(429, ERRO_LIMITE);
+
   try {
-    const { nome, email, senha, telefone, role } = await req.json();
+    const resultado = await criarConta(prisma, validado.data);
+    if (!resultado.ok) return responderErro(409, resultado.erro, resultado.campo);
 
-    if (!email || !senha || !nome) {
-      return NextResponse.json(
-        { success: false, data: null, error: "Nome, email e senha são obrigatórios" },
-        { status: 400 }
-      );
+    if (confirmarEmailLigado()) {
+      await enviarCodigo(prisma, resultado.userId, "EMAIL_CADASTRO").catch((erro) => {
+        console.error("Erro ao enviar código do cadastro:", erro);
+      });
     }
 
-    const senhaHash = await bcrypt.hash(senha, 10);
-    const user = await prisma.user.create({
-      data: {
-        nome,
-        email,
-        senha: senhaHash,
-        telefone,
-        role: role || "CONTRATANTE",
-      },
-    });
-
-    return NextResponse.json(
-      { success: true, data: { userId: user.id }, error: null },
-      { status: 201 }
-    );
-  } catch (error: any) {
-    if (error.code === "P2002") {
-      return NextResponse.json(
-        { success: false, data: null, error: "Email já cadastrado" },
-        { status: 400 }
-      );
-    }
-    return NextResponse.json(
-      { success: false, data: null, error: "Erro interno ao criar utilizador" },
-      { status: 500 }
-    );
+    return NextResponse.json({ ok: true, data: { userId: resultado.userId } }, { status: 201 });
+  } catch (erro) {
+    console.error("Erro ao criar conta via /api/register:", erro);
+    return responderErro(500, "Não conseguimos criar sua conta agora. Tente de novo em instantes.");
   }
 }

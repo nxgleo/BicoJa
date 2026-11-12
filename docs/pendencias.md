@@ -4,9 +4,6 @@ Lista do que encontramos no back end durante o front novo. Está dividida em: **
 
 ## A. Precisa ser feito (por ordem de importância)
 
-1. **`GET /api/propostas` é público e mostra email e telefone dos prestadores.** Qualquer pessoa lista as propostas e pega o contato de todo mundo. Sugestão: exigir login e tirar `email`/`telefone` do `select` (o front novo não usa essa rota — a proposta agora vive no chat).
-2. **`POST /api/pagamentos/simular` não confere quem está logado nem se a proposta é da pessoa.** Qualquer um "paga" a proposta de outro. O front novo usa `POST /api/contratos/:id/pagamento`; dá para apagar só a rota antiga. **Não apague `lib/payments.ts`**: o front novo agora usa o seu `processarPagamentoSimulado` dentro de `escolherPagamento`.
-3. **`POST /api/register` não valida nada** (formato do email, força da senha) e **aceita `role` vindo do corpo**. O front novo usa `POST /api/contas/cadastro` (com validação). Sugestão: apagar `/api/register` ou fazer ele usar `lib/contas/cadastro.ts`.
 4. **`x-forwarded-for` é lido direto** em `pagamentos/simular`, `propostas`, `servicos` (e no limite de login em `lib/auth.ts`, `lib/contas/requisicao.ts`). Só é confiável atrás de um proxy que sobrescreve esse cabeçalho (Vercel, Nginx…). Fora disso, alguém troca o IP e escapa do limite. Decidir quando escolher onde hospedar.
 5. **Sessões antigas continuam valendo depois de trocar a senha** (JWT do NextAuth não tem "derrubar todas"). Sugestão: guardar uma `versaoSessao` no `User` e conferir no callback `jwt`.
 6. **Celular não é verificado** (só o email tem código). Hoje alguém pode cadastrar o celular de outra pessoa e "ocupar" o número. Precisa de SMS (pago) — decidir com o Kazuo.
